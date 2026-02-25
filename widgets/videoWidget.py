@@ -1,8 +1,8 @@
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton
 from PySide6.QtMultimedia import QMediaPlayer
 from PySide6.QtMultimediaWidgets import QVideoWidget
-from PySide6.QtCore import QUrl
-
+from PySide6.QtCore import QUrl, QTimer
+import time
 
 class VideoWidget(QWidget):
     def __init__(self):
@@ -17,7 +17,7 @@ class VideoWidget(QWidget):
 
         self.player = QMediaPlayer()
         self.player.setVideoOutput(self.video_widget)
-
+        
         self.play_button = QPushButton("Play")
         layout.addWidget(self.play_button)
 
@@ -25,7 +25,9 @@ class VideoWidget(QWidget):
         self.player.playbackStateChanged.connect(self._update_button)
 
     def load_video(self, file_path):
+        self.player.stop()  
         self.player.setSource(QUrl.fromLocalFile(file_path))
+        QTimer.singleShot(0, self.player.pause)
 
     def play(self):
         self.player.play()
