@@ -10,12 +10,12 @@ from timeKeeper import TimeKeeper
 from widgets.videoWidget import VideoWidget
 from widgets.timelineWidget import TimelineWidget
 from widgets.commentsWidget import CommentWidget
-
+from backend.span_keeper import SpanKeeper
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-
+        
         self.setWindowTitle("Video Editor Layout")
         self.resize(1200, 800)
 
@@ -24,10 +24,9 @@ class MainWindow(QMainWindow):
         self._create_widgets()
         self._create_layout()
         self._create_menu()
-
+        
     def _create_widgets(self):
-        self.video_pane = VideoWidget(self.time_keeper)
-
+        self.video_pane = VideoWidget(SpanKeeper(), self.time_keeper)
         self.timeline = TimelineWidget()
         self.timeline.connect_signals(self.time_keeper)
 
