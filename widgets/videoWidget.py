@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QSlider
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QHBoxLayout
 from PySide6.QtMultimedia import QMediaPlayer
 from PySide6.QtMultimediaWidgets import QVideoWidget
 from PySide6.QtCore import QUrl, QTimer, Qt
@@ -28,17 +28,20 @@ class VideoWidget(QWidget):
         self.scrubber.setRange(0, 0)
         layout.addWidget(self.scrubber)
         
+        button_layout = QHBoxLayout()
+        button_layout.addStretch()
         self.play_button = QPushButton("Play")
-        layout.addWidget(self.play_button)
+        self.play_button.setFixedWidth(80)
+        button_layout.addWidget(self.play_button)
+        self.add_mark_button = QPushButton("Start Mark")
+        self.add_mark_button.setFixedWidth(80)
+        button_layout.addWidget(self.add_mark_button)
+        button_layout.addStretch()
+        layout.addLayout(button_layout)
 
         self.play_button.clicked.connect(self.toggle_play_pause)
         self.player.playbackStateChanged.connect(self._update_button)
-
-        self.add_mark_button = QPushButton("Start Mark")
-        layout.addWidget(self.add_mark_button)
-
         self.add_mark_button.clicked.connect(self.add_mark)
-
         self.player.positionChanged.connect(self._on_position_changed)
         self.player.durationChanged.connect(self._on_duration_changed)
         self.scrubber.sliderMoved.connect(self._on_scrubber_moved)
