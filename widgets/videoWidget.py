@@ -2,10 +2,16 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QSlider
 from PySide6.QtMultimedia import QMediaPlayer
 from PySide6.QtMultimediaWidgets import QVideoWidget
 from PySide6.QtCore import QUrl, QTimer, Qt
+from timeKeeper import TimeKeeper
 
 class VideoWidget(QWidget):
     def __init__(self):
         super().__init__()
+        self._create_ui()
+
+    def __init__(self, time_keeper: TimeKeeper):
+        super().__init__()
+        self.time_keeper = time_keeper
         self._create_ui()
 
     def _create_ui(self):
@@ -15,7 +21,11 @@ class VideoWidget(QWidget):
         layout.addWidget(self.video_widget)
 
         self.player = QMediaPlayer()
+        self.time_keeper.set_player(self.player)
         self.player.setVideoOutput(self.video_widget)
+        
+        # Set notify interval to 60ms 
+        self.player.setNotifyInterval(60)
         
         self.scrubber = QSlider(Qt.Orientation.Horizontal)
         self.scrubber.setRange(0, 0)

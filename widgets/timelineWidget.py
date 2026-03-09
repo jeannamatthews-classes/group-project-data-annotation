@@ -15,3 +15,13 @@ class TimelineWidget(QWidget):
         self.label.setStyleSheet("background-color: #333; color: white;")
 
         layout.addWidget(self.label)
+
+    def connect_signals(self, time_keeper):
+        time_keeper.positionChanged.connect(self._on_position_changed)
+        time_keeper.windowChanged.connect(self._on_window_size_changed)
+
+    def _on_position_changed(self, position):
+        pass
+
+    def _on_window_change(self, start, end):
+        pass

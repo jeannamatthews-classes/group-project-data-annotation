@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (
     QFileDialog,
 )
 
+from timeKeeper import TimeKeeper
 from widgets.videoWidget import VideoWidget
 from widgets.timelineWidget import TimelineWidget
 from widgets.commentsWidget import CommentWidget
@@ -18,14 +19,20 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Video Editor Layout")
         self.resize(1200, 800)
 
+        self.time_keeper = TimeKeeper()
+
         self._create_widgets()
         self._create_layout()
         self._create_menu()
 
     def _create_widgets(self):
-        self.video_pane = VideoWidget()
+        self.video_pane = VideoWidget(self.time_keeper)
+
         self.timeline = TimelineWidget()
+        self.timeline.connect_signals(self.time_keeper)
+
         self.comments = CommentWidget()
+        self.comments.connect_signals(self.time_keeper)
 
     def _create_layout(self):
         central_widget = QWidget()

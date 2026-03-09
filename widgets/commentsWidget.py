@@ -15,3 +15,9 @@ class CommentWidget(QWidget):
         self.label.setStyleSheet("background-color: #222; color: white;")
 
         layout.addWidget(self.label)
+
+    def connect_signals(self, time_keeper):
+        time_keeper.positionChanged.connect(self._on_position_changed)
+
+    def _on_position_changed(self, position):
+        pass
