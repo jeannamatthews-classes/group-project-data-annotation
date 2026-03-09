@@ -18,10 +18,10 @@ class TimelineWidget(QWidget):
 
     def connect_signals(self, time_keeper):
         time_keeper.positionChanged.connect(self._on_position_changed)
-        time_keeper.windowChanged.connect(self._on_window_size_changed)
+        time_keeper.windowChanged.connect(self._on_window_changed)
 
     def _on_position_changed(self, position):
         pass
 
-    def _on_window_change(self, start, end):
+    def _on_window_changed(self, start, end):
         pass

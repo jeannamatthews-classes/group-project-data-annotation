@@ -24,9 +24,6 @@ class VideoWidget(QWidget):
         self.time_keeper.set_player(self.player)
         self.player.setVideoOutput(self.video_widget)
         
-        # Set notify interval to 60ms 
-        self.player.setNotifyInterval(60)
-        
         self.scrubber = QSlider(Qt.Orientation.Horizontal)
         self.scrubber.setRange(0, 0)
         layout.addWidget(self.scrubber)
