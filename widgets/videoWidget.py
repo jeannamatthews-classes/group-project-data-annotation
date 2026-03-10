@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QHBoxLayout
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QHBoxLayout, QComboBox, QLabel
 from PySide6.QtMultimedia import QMediaPlayer
 from PySide6.QtMultimediaWidgets import QVideoWidget
 from PySide6.QtCore import QUrl, QTimer, Qt
@@ -16,26 +16,37 @@ class VideoWidget(QWidget):
         
     def _create_ui(self):
         layout = QVBoxLayout(self)
-
         self.video_widget = QVideoWidget()
         layout.addWidget(self.video_widget)
-
         self.player = QMediaPlayer()
         self.time_keeper.set_player(self.player)
         self.player.setVideoOutput(self.video_widget)
         
-        self.scrubber = self.scrubber = HighlightSlider(Qt.Orientation.Horizontal, self.span_keeper)
+        self.scrubber = HighlightSlider(Qt.Orientation.Horizontal, self.span_keeper)
         self.scrubber.setRange(0, 0)
         layout.addWidget(self.scrubber)
         
         button_layout = QHBoxLayout()
         button_layout.addStretch()
+
         self.play_button = QPushButton("Play")
         self.play_button.setFixedWidth(80)
         button_layout.addWidget(self.play_button)
+
         self.add_mark_button = QPushButton("Start Mark")
         self.add_mark_button.setFixedWidth(80)
         button_layout.addWidget(self.add_mark_button)
+
+        # Playback speed dropdown
+        speed_label = QLabel("Speed:")
+        button_layout.addWidget(speed_label)
+
+        self.speed_combo = QComboBox()
+        self.speed_combo.addItems(["0.25x", "0.5x", "0.75x", "1x", "1.25x", "1.5x", "2x", "10x"])
+        self.speed_combo.setCurrentText("1x")
+        self.speed_combo.setFixedWidth(70)
+        button_layout.addWidget(self.speed_combo)
+
         button_layout.addStretch()
         layout.addLayout(button_layout)
 
@@ -46,6 +57,11 @@ class VideoWidget(QWidget):
         self.player.durationChanged.connect(self._on_duration_changed)
         self.scrubber.sliderMoved.connect(self._on_scrubber_moved)
         self.scrubber.sliderPressed.connect(self._on_scrubber_pressed)
+        self.speed_combo.currentTextChanged.connect(self._on_speed_changed)
+
+    def _on_speed_changed(self, text):
+        speed = float(text.replace("x", ""))
+        self.player.setPlaybackRate(speed)
 
     def load_video(self, file_path):
         self.player.stop()  
