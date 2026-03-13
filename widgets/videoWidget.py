@@ -4,6 +4,9 @@ from PySide6.QtMultimediaWidgets import QVideoWidget
 from PySide6.QtCore import QUrl, QTimer, Qt
 
 class VideoWidget(QWidget):
+    positionUpdated = Signal(int)  # Signal to emit the current position in milliseconds
+    durationUpdated = Signal(int)  # Signal to emit the duration in milliseconds
+
     def __init__(self):
         super().__init__()
         self._create_ui()

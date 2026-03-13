@@ -21,6 +21,7 @@ class MainWindow(QMainWindow):
         self._create_widgets()
         self._create_layout()
         self._create_menu()
+        self._connect_signals()
 
     def _create_widgets(self):
         self.video_pane = VideoWidget()
@@ -42,6 +43,10 @@ class MainWindow(QMainWindow):
         # Add layouts to main layout
         main_layout.addLayout(left_layout, stretch=4)
         main_layout.addWidget(self.comments, stretch=1)
+
+    def _connect_signals(self):
+        self.video_pane.positionUpdated.connect(self.comments.set_current_time)
+        self.comments.jumpRequested.connect(self.video_pane.seek)
 
     def _load_video(self):
         file_path, _ = QFileDialog.getOpenFileName(
