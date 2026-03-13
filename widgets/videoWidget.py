@@ -5,11 +5,7 @@ from PySide6.QtCore import QUrl, QTimer, Qt
 from timeKeeper import TimeKeeper
 
 class VideoWidget(QWidget):
-    def __init__(self):
-        super().__init__()
-        self._create_ui()
-
-    def __init__(self, time_keeper: TimeKeeper):
+    def __init__(self, time_keeper: TimeKeeper | None = None):
         super().__init__()
         self.time_keeper = time_keeper
         self._create_ui()
