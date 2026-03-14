@@ -61,6 +61,17 @@ class MainWindow(QMainWindow):
             self.video_pane.load_video(file_path)
             self.video_pane.play()
 
+    def _load_data(self):
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Open Sensor Data File",
+            "",
+            "CSV Files (*.csv);;All Files (*)"
+        )
+
+        if file_path:
+            self.timeline.load_data(file_path)
+
     # Menu Bar
     def _create_menu(self):
         menu_bar = self.menuBar()
@@ -69,6 +80,8 @@ class MainWindow(QMainWindow):
 
         load_action = file_menu.addAction("Load Video")
         load_action.triggered.connect(self._load_video)
+        load_action = file_menu.addAction("Load Data")
+        load_action.triggered.connect(self._load_data)
 
         file_menu.addSeparator()
 

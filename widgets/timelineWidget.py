@@ -29,6 +29,7 @@ class TimelineWidget(QWidget):
     def load_data(self, datapath: str):
         del self.data
         self.data = DataReader(datapath)
+        self.grapher.clear()
 
     def connect_signals(self, time_keeper):
         time_keeper.positionChanged.connect(self._on_position_changed)
