@@ -8,7 +8,7 @@ from PySide6.QtWidgets import (
     QWidget
 )
 
-class Grapher(QWidget):
+class Graph(QWidget):
     """
     A widget for drawing a series of data points to the screen on a scalable graph.
     """

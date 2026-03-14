@@ -1,6 +1,6 @@
 import csv
 
-class DataReader:
+class CSVReader:
     """
     csv wrapper class to parse rows of sensor data sequentially.
     """

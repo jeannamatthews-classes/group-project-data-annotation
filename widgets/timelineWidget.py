@@ -5,15 +5,15 @@ from PySide6.QtWidgets import (
     QWidget, QVBoxLayout
 )
 
-from widgets.helpers.data_reader import DataReader
-from widgets.helpers.grapher import Grapher
+from util.csv_reader import CSVReader
+from widgets.graph_widget import Graph
 
 class TimelineWidget(QWidget):
     def __init__(self, datapath: str | None = None, title: str | None = None):
         super().__init__()
 
-        self.data = DataReader(datapath)
-        self.grapher = Grapher(title)
+        self.data = CSVReader(datapath)
+        self.graph = Graph(title)
 
         self._create_ui()
 
@@ -23,13 +23,13 @@ class TimelineWidget(QWidget):
 
     def _create_ui(self):
         layout = QVBoxLayout()
-        layout.addWidget(self.grapher)
+        layout.addWidget(self.graph)
         self.setLayout(layout)
 
     def load_data(self, datapath: str):
         del self.data
-        self.data = DataReader(datapath)
-        self.grapher.clear()
+        self.data = CSVReader(datapath)
+        self.graph.clear()
 
     def connect_signals(self, time_keeper):
         time_keeper.positionChanged.connect(self._on_position_changed)
@@ -46,12 +46,12 @@ class TimelineWidget(QWidget):
             case Qt.LeftButton:
                 if self.data.success:
                     for _ in range(5):
-                        self.grapher.draw_next(self.data.next_row())
+                        self.graph.draw_next(self.data.next_row())
             case Qt.RightButton:
-                self.grapher.clear()
+                self.graph.clear()
                 self.data.reset()
             case Qt.MiddleButton:
-                self.grapher.x_scroll()
+                self.graph.x_scroll()
 
     # development helpers / data analysis
     def _total_time(self):
