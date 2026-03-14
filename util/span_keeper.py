@@ -1,4 +1,4 @@
-from backend.span_class import Span
+from util.span_class import Span
 from pathlib import Path
 
 class SpanKeeper:

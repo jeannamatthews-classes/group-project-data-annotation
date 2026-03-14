@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import QSlider, QStyleOptionSlider, QStyle
 from PySide6.QtGui import QPainter, QColor
 from PySide6.QtCore import Qt
-from backend.span_keeper import SpanKeeper
+from util.span_keeper import SpanKeeper
 
 class HighlightSlider(QSlider):
     def __init__(self, orientation=Qt.Orientation.Horizontal, span_keeper: SpanKeeper | None = None):

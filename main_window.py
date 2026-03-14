@@ -10,7 +10,7 @@ from timeKeeper import TimeKeeper
 from widgets.videoWidget import VideoWidget
 from widgets.timelineWidget import TimelineWidget
 from widgets.commentsWidget import CommentWidget
-from backend.span_keeper import SpanKeeper
+from util.span_keeper import SpanKeeper
 
 class MainWindow(QMainWindow):
     def __init__(self):

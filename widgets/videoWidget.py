@@ -4,7 +4,7 @@ from PySide6.QtMultimediaWidgets import QVideoWidget
 from PySide6.QtCore import QUrl, QTimer, Qt
 from widgets.highlight_slider import HighlightSlider
 from timeKeeper import TimeKeeper
-from backend.span_keeper import SpanKeeper
+from util.span_keeper import SpanKeeper
 
 class VideoWidget(QWidget):
     def __init__(self, span_keeper: SpanKeeper, time_keeper: TimeKeeper | None = None):
