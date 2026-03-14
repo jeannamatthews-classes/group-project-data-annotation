@@ -2,7 +2,7 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QHBoxLayout, QC
 from PySide6.QtMultimedia import QMediaPlayer
 from PySide6.QtMultimediaWidgets import QVideoWidget
 from PySide6.QtCore import QUrl, QTimer, Qt
-from widgets.helpers.highlight_slider import HighlightSlider
+from widgets.highlight_slider import HighlightSlider
 from timeKeeper import TimeKeeper
 from backend.span_keeper import SpanKeeper
 
