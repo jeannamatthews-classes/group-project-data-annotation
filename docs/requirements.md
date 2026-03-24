@@ -107,7 +107,7 @@ The sensor timeline makes use of the grapher and csv reader to display sequentia
 
 # E. Modules
 ## E1. Architecture / Class Interaction Diagram
-![alt text](../documentation_images/class_interaction_diagram.png)
+![alt text](./documentation_images/class_interaction_diagram.png)
 
 ## E2. TimeKeeper
 The TimeKeeper module is responsible for keeping track of the current position in the video and syncing all other widgets to that time. It will be created as a singleton and be assigned the QMediaPlayer created by the VideoWidget. The TimeKeeper module monitors the positionChanged signal emitted by the QMediaPlayer to keep track of the current position. It then emits a signal that the other widgets monitor. The TimeKeeper keeps track of the following:
@@ -145,14 +145,14 @@ The JSON Reader/Writer module is responsible for the persistent storage of annot
 # F. Workflow
 ## F1. Annotation 
 Note this illustrates the process for span annotations. The process for instantaneous annotations is the same except you press the flag button
-![alt text](../documentation_images/use_case_diagram.png)
+![alt text](./documentation_images/use_case_diagram.png)
 
 ## F2. UI
 The figures below show our target user interface and a QT layout to achieve it. Small details like video controls and dropdown menus are not shown here and are subject to change during the design and testing process as a deeper understanding of the workflow is obtained.
 
-![alt text](../documentation_images/UI_diagram.png)
+![alt text](./documentation_images/UI_diagram.png)
 
-![alt text](../documentation_images/UI_diagram_pyside.png)
+![alt text](./documentation_images/UI_diagram_pyside.png)
 
 ## F3. Alignment (stretch goal still brainstorming)
 Each sensor and the camera is in its own time system. To sync the modalities each data collection session is started by taking the two sensors one in each hand and smacking them together in front of the camera. The user would be able to drag the wave forms of each sensor to align their peaks, once the wave forms are aligned they could lock them together and then drag and align them with the video, which could then be locked.
