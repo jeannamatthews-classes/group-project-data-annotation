@@ -10,10 +10,10 @@
 ## C. Features
 1) Video Player
 2) Annotation
-3) Seek
+3) Seek (non-critical)
 4) Sensor Timeline
-5) Alignment (non-critical)
-## D. Modules
+5) Alignment 
+## D. Modules 
 1) Architecture / Class interaction diagram
 2) TimeKeeper
 3) Grapher
@@ -23,7 +23,7 @@
 ## E. Workflow
 1) Annotation
 2) Interaction diagram
-3) Alignment (non-critical)
+3) Alignment
 ## F. UI
 1) Graphical hierarchy
 
@@ -34,7 +34,7 @@ A standalone Python program that runs on Windows to be used by medical researche
 The MVP must be capable of the following: importing the signals and video, playing back the video, and exportable annotations.
 
 ## A2. Requirements/Dependencies
-Python version 3.13.12, PySide6 version 6.2.7, ruptures version 1.1.10, numpy, scipy
+Python version 3.13.12, PySide6 version 6.2.7, ruptures version 1.1.10, numpy, scipy, h5py
 
 # B. Input/Output
 ## B1. Video
@@ -43,9 +43,9 @@ Python version 3.13.12, PySide6 version 6.2.7, ruptures version 1.1.10, numpy, s
 * Lengths will vary but can be up to 72 hours, so will need to process in chunks
 
 ## B2. 9-axis IMU
-* Up to 2 files (2 sensors collected data simultaneously one on each wrist). 
+* Each session will be stored in a single HDF5 file.
+  - The individual sensors data will be stored in `HDF5 datasets`
 * Selected using the hosts file navigator.
-* Will be a CSV.
 * Will have an Arbitrary sampling rate not exceeding 100hz
 * C1 - C3:  x, y, and z of accelerometer.
 * C4 - C6:  x, y, and z of the gyroscope.
@@ -100,60 +100,61 @@ The sensor timeline makes use of the grapher and csv reader to display sequentia
 * Reads the data with csv reader and displays it with grapher
 * Responsible for the synchronization between the two systems
 
-## C5. Alignment (stretch goal still brainstorming)
+## C5. Alignment
+The alignment process will involve being able to specify how many indices to skip. It will give the appearance of cropping but the files are not edited. After the alignment process is finished the user will be able to lock the modalities together as to avoid accidentally unsyncing them, additionally the user will be able to save the new starting indices to be loaded at a future time 
 * Uses the the sensor graph and video player
 * Enabled by syncing action e.g. smacking the sensors together in front of the camera
 * Align the two sensors based on the peaks and then align those with the action seen in the video.
 
-# E. Modules
-## E1. Architecture / Class Interaction Diagram
+
+# D. Modules
+## D1. Architecture / Class Interaction Diagram
 ![alt text](./documentation_images/class_interaction_diagram.png)
 
-## E2. TimeKeeper
+## D2. TimeKeeper
 The TimeKeeper module is responsible for keeping track of the current position in the video and syncing all other widgets to that time. It will be created as a singleton and be assigned the QMediaPlayer created by the VideoWidget. The TimeKeeper module monitors the positionChanged signal emitted by the QMediaPlayer to keep track of the current position. It then emits a signal that the other widgets monitor. The TimeKeeper keeps track of the following:
 * The Current video position
 * The window size
 * Left window bound (> 0)
 * Right window bound
 
-## E3. SpanKeeper
+## D3. SpanKeeper
 The SpanKeeper allows for the creation and storage of individual Spans which store the start and stop time of span annotations.
 * Used by annotations to keep track of span annotations
 * Used by video player scrubber to display annotated portions of the video on the timeline
 * Begin flag and end flag button from video player act as input
 
-## E4. Grapher
+## D4. Grapher
 The Grapher manages a graphics system for drawing a data graph inside of a widget. It dynamically resizes based on window size and numerous other configurable parameters.
 * Used by timeline to display the sensor data received from csv reader
 * Allow user interaction to manipulate graph parameters using scrolling with modifier keys and possibly a settings menu
 * Automatically scrolls with video and can be scrolled by the user as well
 
-## E5. CSV reader
-The CSV Reader module is responsible for importing, validating, and organizing the IMU sensor data used throughout the timeline and graphing system.
-* Used by the Sensor Timeline and Grapher to load sensor data from one CSV file collected from the wrist-mounted sensors
-* Parses accelerometer, gyroscope, magnetometer, and timestamp fields from the CSV format defined in the system requirements, while ignoring quaternion values that are not used by the application
-* Preserves synchronization and instantaneous timestamp data so the sensor signals can be plotted correctly and later aligned with the video
-* Validates incoming CSV structure and converts the raw file contents into an internal data format suitable for visualization and future seek/alignment functionality
+## D5. HDF5 reader
+The HDF5 Reader module is responsible for handling the dynamic loading of the of the 9-axis IMU sensor data. The module uses HDF5 underlying functionality to chunk the data enabling us to not load any more data into RAM than we are displaying this is especially critical because of the potentially very large files (upto 72 hours).
+* Used by the Sensor Timeline and Grapher to load in the data from the wrist-mounted IMU sensors
+* Parses out acceleration acceleration values, and converts them from Analog-to-Digital Converter (ADC) Counts to meters a second `accl_range/adc_range * value` where `accl_range` is (+/-8g) and adc_range is `32767.0`
+* After conversion it applies the vectors magnitude for plotting.
+* Allows each of the sensors to be chunked independently as to allow for alignment functionality
 
-## E6. JSON reader/writer
+## D6. JSON reader/writer
 The JSON Reader/Writer module is responsible for the persistent storage of annotation data so that user work can be saved, reloaded, and exported between sessions.
 * Used by the annotation system to import previously saved annotation files and export newly created annotations in JSON format
 * Reads and writes all required annotation fields, including start and stop timestamps, sidedness, RASS score, movement characteristic, reasoning, and free-form comments
 * Reconstructs saved annotations for display in the interface and ensures that exported annotations remain portable, reusable, and consistent with the application requirements
 * Supports the MVP goal of producing exportable annotations and serves as the main persistence layer for user-generated annotation data
 
-# F. Workflow
-## F1. Annotation 
+# E. Workflow
+## E1. Annotation 
 Note this illustrates the process for span annotations. The process for instantaneous annotations is the same except you press the flag button
 ![alt text](./documentation_images/use_case_diagram.png)
 
-## F2. UI
+## E2. UI
 The figures below show our target user interface and a QT layout to achieve it. Small details like video controls and dropdown menus are not shown here and are subject to change during the design and testing process as a deeper understanding of the workflow is obtained.
 
 ![alt text](./documentation_images/UI_diagram.png)
 
 ![alt text](./documentation_images/UI_diagram_pyside.png)
 
-## F3. Alignment (stretch goal still brainstorming)
-Each sensor and the camera is in its own time system. To sync the modalities each data collection session is started by taking the two sensors one in each hand and smacking them together in front of the camera. The user would be able to drag the wave forms of each sensor to align their peaks, once the wave forms are aligned they could lock them together and then drag and align them with the video, which could then be locked.
-
+## E3. Alignment 
+Each sensor and the camera is in its own time system. To sync the modalities each data collection session is started by taking the two sensors one in each hand and smacking them together in front of the camera. The user will be able to use buttons to crop the beginning off of the wave form and video to get them to line up visually before exporting/saving the offset.
