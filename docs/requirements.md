@@ -30,6 +30,9 @@
 # A. Introduction
 A standalone Python program that runs on Windows to be used by medical researchers to annotate videos paired with waveforms from accelerometers, gyroscopes, and magnetometers. The video and signals are aligned allowing the user to assign meaning to the signals based on what is happening in the videos. The program must allow video navigation, variable playback, annotation, and a seek function. For annotation the user needs to select a portion of the video and then input their annotation/comments. The seek function needs to identify jumps or large changes in the waveform and display the corresponding video portion.
 
+The annotations which are described in detail in C2 are all related to the Richmond Agitation Sedation Scale or RASS. This score is used in ICU setting to quantify how agitated a given patient. These annotations will be used to train a model that can act as a "nanny" autonomously monitoring patients 
+![alt text](./documentation_images/RASS_chart.jpeg)
+
 ## A1. MVP 
 The MVP must be capable of the following: importing the signals and video, playing back the video, and exportable annotations.
 
@@ -43,6 +46,9 @@ Python version 3.13.12, PySide6 version 6.2.7, ruptures version 1.1.10, numpy, s
 * Lengths will vary but can be up to 72 hours, so will need to process in chunks
 
 ## B2. 9-axis IMU
+* Two 9-axis IMUs one for each wrist collecting data simultaneously
+  - Some movements/actions are multi handed and collecting data from both wrists will alow us to model said actions
+  - Dangerous action can involve only a single hand so we need to monitor both  
 * Each session will be stored in a single HDF5 file.
   - The individual sensors data will be stored in `HDF5 datasets`
 * Selected using the hosts file navigator.
@@ -59,7 +65,7 @@ Python version 3.13.12, PySide6 version 6.2.7, ruptures version 1.1.10, numpy, s
 * Will be a JSON
 * Each annotation will contain
   - Start and Stop time stamps
-  - Sidedness
+  - Sidedness (left or right wrist)
   - A RASS score from +4 to -5
   - A movement characteristic chosen from a predetermined list
     * Note/Reasoning for choosing selecting said characteristic
@@ -90,7 +96,7 @@ Two types of annotations span annotation and instantaneous annotations. Span ann
 ## C3. Seek
 The seek function finds and allows users to jump to a point in time where there is a notable change in actigraphy. The technical term for this is [offline change point detection](https://en.wikipedia.org/wiki/Change_detection#Offline_change_detection) (OCPD). To do this we will be utilizing the python [ruptures](https://github.com/deepcharles/ruptures) python package.
 * The OCPD algorithm will process the vector sum of acceleration vectors. We are only using the acceleration vectors for this because it keeps it simple and there is research showing a high correlation between RASS scores and absolute acceleration values.
-* After identifying the points of interest using OCP their timestamps will be recorded by the TimeKeeper class where the seek buttons in the video player can access them. 
+* After identifying the points of interest using OCPD their timestamps will be recorded by the TimeKeeper class where the seek buttons in the video player can access them. 
 * Get timestamps of the change points and give them to the video player so it can “jump” to them.
 
 ## C4. Sensor Timeline (TimelineWidget)
@@ -157,4 +163,4 @@ The figures below show our target user interface and a QT layout to achieve it. 
 ![alt text](./documentation_images/UI_diagram_pyside.png)
 
 ## E3. Alignment 
-Each sensor and the camera is in its own time system. To sync the modalities each data collection session is started by taking the two sensors one in each hand and smacking them together in front of the camera. The user will be able to use buttons to crop the beginning off of the wave form and video to get them to line up visually before exporting/saving the offset.
+Each sensor and the camera is in its own time system. To sync the modalities each data collection session is started by taking the two sensors one in each hand and smacking them together 3 times in front of the camera. The annotator will be able to use these peaks to align the sensors to one another and then to the video. The program will have (+/-) buttons that allow the user to change the t0 of any of the modalities.
