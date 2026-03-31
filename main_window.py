@@ -6,27 +6,32 @@ from PySide6.QtWidgets import (
     QFileDialog,
 )
 
+from timeKeeper import TimeKeeper
 from widgets.videoWidget import VideoWidget
 from widgets.timelineWidget import TimelineWidget
 from widgets.commentsWidget import CommentWidget
-
+from util.span_keeper import SpanKeeper
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-
+        
         self.setWindowTitle("Video Editor Layout")
         self.resize(1200, 800)
+
+        self.time_keeper = TimeKeeper()
 
         self._create_widgets()
         self._create_layout()
         self._create_menu()
-        self._connect_signals()
-
+        
     def _create_widgets(self):
-        self.video_pane = VideoWidget()
+        self.video_pane = VideoWidget(SpanKeeper(), self.time_keeper)
         self.timeline = TimelineWidget()
+        self.timeline.connect_signals(self.time_keeper)
+
         self.comments = CommentWidget()
+        self.comments.connect_signals(self.time_keeper)
 
     def _create_layout(self):
         central_widget = QWidget()
@@ -44,10 +49,6 @@ class MainWindow(QMainWindow):
         main_layout.addLayout(left_layout, stretch=4)
         main_layout.addWidget(self.comments, stretch=1)
 
-    def _connect_signals(self):
-        self.video_pane.positionUpdated.connect(self.comments.set_current_time)
-        self.comments.jumpRequested.connect(self.video_pane.seek)
-
     def _load_video(self):
         file_path, _ = QFileDialog.getOpenFileName(
             self,
@@ -60,6 +61,17 @@ class MainWindow(QMainWindow):
             self.video_pane.load_video(file_path)
             self.video_pane.play()
 
+    def _load_data(self):
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Open Sensor Data File",
+            "",
+            "CSV Files (*.csv);;All Files (*)"
+        )
+
+        if file_path:
+            self.timeline.load_data(file_path)
+
     # Menu Bar
     def _create_menu(self):
         menu_bar = self.menuBar()
@@ -68,6 +80,8 @@ class MainWindow(QMainWindow):
 
         load_action = file_menu.addAction("Load Video")
         load_action.triggered.connect(self._load_video)
+        load_action = file_menu.addAction("Load Data")
+        load_action.triggered.connect(self._load_data)
 
         file_menu.addSeparator()
 
