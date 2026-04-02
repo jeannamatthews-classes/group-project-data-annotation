@@ -37,7 +37,7 @@ The annotations which are described in detail in C2 are all related to the Richm
 The MVP must be capable of the following: importing the signals and video, playing back the video, and exportable annotations.
 
 ## A2. Requirements/Dependencies
-Python version 3.13.12, PySide6 version 6.2.7, ruptures version 1.1.10, numpy, scipy, h5py
+Python version 3.13.12, PySide6 version 6.2.7, ruptures version 1.1.10, numpy, scipy, h5py, opencv
 
 # B. Input/Output
 ## B1. Video
@@ -78,14 +78,19 @@ Python version 3.13.12, PySide6 version 6.2.7, ruptures version 1.1.10, numpy, s
 * Controls
   - Pause/Play
   - Adjustable playback speed
-  - Seek button (see Seek for more info)
+  - Seek button (see Seek for more info, stretch goal)
   - Video scrubbing
-  - Begin flag and end flag button (see SpanKeeper for implementation specifics) these are to be used for span annotations
-  - Instantaneous flag: this is to be used for instantaneous annotations
+  - Start/End Mark toggle button see (SpanKeeper for implementation specifics)
+  - Set Trim (set first shown frame to current postion)
+  - Clear Trim (removes trim)
+  - Lock Trim (prevents setting or clearing trim)
+  - Get Trim (prints trim in ms to console)
+
+![alt text](./documentation_images/navigation_bar.png)
 
 ## C2. Annotation
 Two types of annotations span annotation and instantaneous annotations. Span annotations are annotations that span from a start time to stop time. Instantaneous annotations are annotations for specific points in time
-* Prompt user to give annotation after endflag is set
+* Prompt user to give annotation after endflag is set or specify if its an instantaneous annotation 
 * Each span annotation will have
   - Dropdown selector for RASS score can choose +4 to -5
   - Dropdown of predetermined movement characteristics (TBD) accompanied by a free form comment box to contain rational
@@ -107,11 +112,11 @@ The sensor timeline makes use of the grapher and csv reader to display sequentia
 * Responsible for the synchronization between the two systems
 
 ## C5. Alignment
-The alignment process will involve being able to specify how many indices to skip. It will give the appearance of cropping but the files are not edited. After the alignment process is finished the user will be able to lock the modalities together as to avoid accidentally unsyncing them, additionally the user will be able to save the new starting indices to be loaded at a future time 
+The alignment process will involve being able to specify how many indices to skip. It will give the appearance of cropping but the files are not edited. After the alignment process is finished the user will be able to lock the modalities together as to avoid accidentally unsyncing them, additionally the user will be able to save the new starting indices to be loaded at a future time
 * Uses the the sensor graph and video player
 * Enabled by syncing action e.g. smacking the sensors together in front of the camera
 * Align the two sensors based on the peaks and then align those with the action seen in the video.
-
+* See C1 for video alignment tools 
 
 # D. Modules
 ## D1. Architecture / Class Interaction Diagram
@@ -163,4 +168,5 @@ The figures below show our target user interface and a QT layout to achieve it. 
 ![alt text](./documentation_images/UI_diagram_pyside.png)
 
 ## E3. Alignment 
-Each sensor and the camera is in its own time system. To sync the modalities each data collection session is started by taking the two sensors one in each hand and smacking them together 3 times in front of the camera. The annotator will be able to use these peaks to align the sensors to one another and then to the video. The program will have (+/-) buttons that allow the user to change the t0 of any of the modalities.
+Each sensor and the camera is in its own time system. To sync the modalities each data collection session is started by taking the two sensors one in each hand and smacking them together 3 times in front of the camera. The annotator will be able to use these peaks to align the sensors to one another and then to the video. The program will have (+/-)
+buttons that allow the user to change the t0 of the wave forms and a set trim button to change the displayed beginning of the video.
