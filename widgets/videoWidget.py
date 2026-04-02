@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QHBoxLayout, QComboBox, QLabel
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QHBoxLayout, QComboBox, QLabel, QCheckBox
 from PySide6.QtMultimedia import QMediaPlayer
 from PySide6.QtMultimediaWidgets import QVideoWidget
 from PySide6.QtCore import QUrl, QTimer, Qt
@@ -83,12 +83,46 @@ class VideoWidget(QWidget):
 
         layout.addLayout(nav_layout)
 
+        # --- Trimming ---
+        trim_layout = QHBoxLayout()
+        
+        # Left
+        left_trim = QHBoxLayout()
+        self.get_trim_button = QPushButton("Get Trim") 
+        self.get_trim_button.setFixedWidth(80)
+        left_trim.addWidget(self.get_trim_button)
+        left_trim.addStretch()
 
+        # Center
+        center_trim = QHBoxLayout()
+        self.set_trim_button = QPushButton("Set Trim")
+        self.set_trim_button.setFixedWidth(80)
+        center_trim.addWidget(self.set_trim_button)
+        self.trim_label = QLabel("No trim set")
+        self.trim_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        center_trim.addWidget(self.trim_label)
+        self.clear_trim_button = QPushButton("Clear Trim")
+        self.clear_trim_button.setFixedWidth(80)
+        center_trim.addWidget(self.clear_trim_button)
 
+        # Right
+        right_trim = QHBoxLayout()
+        right_trim.addStretch()
+        self.lock_trim_cbox = QCheckBox("Lock Trim")
+        right_trim.addWidget(self.lock_trim_cbox)
+
+        trim_layout.addLayout(left_trim, stretch=1)
+        trim_layout.addLayout(center_trim, stretch=0)
+        trim_layout.addLayout(right_trim, stretch=-1)
+        layout.addLayout(trim_layout)
+        
         self.play_button.clicked.connect(self.toggle_play_pause)
         self.add_mark_button.clicked.connect(self.add_mark)
         self.step_back_button.clicked.connect(self.step_backward)
         self.step_forward_button.clicked.connect(self.step_forward)
+        self.set_trim_button.clicked.connect(self.set_trim)
+        self.clear_trim_button.clicked.connect(self.clear_trim)
+        self.get_trim_button.clicked.connect(self.get_trim)
 
         self.player.playbackStateChanged.connect(self._update_button)
         self.player.positionChanged.connect(self._on_position_changed)
@@ -96,14 +130,20 @@ class VideoWidget(QWidget):
         self.scrubber.sliderMoved.connect(self._on_scrubber_moved)
         self.scrubber.sliderPressed.connect(self._on_scrubber_pressed)
         self.speed_combo.currentTextChanged.connect(self._on_speed_changed)
+        self.lock_trim_cbox.toggled.connect(lambda checked: self.set_trim_button.setEnabled(not checked))
+        self.lock_trim_cbox.toggled.connect(lambda checked: self.clear_trim_button.setEnabled(not checked))
 
         self._controls = [
+            self.set_trim_button,
+            self.clear_trim_button,
+            self.get_trim_button,
             self.step_back_button,
             self.step_forward_button,
             self.play_button,
             self.add_mark_button,
             self.speed_combo,
             self.step_combo,
+            self.lock_trim_cbox,
         ]
 
         for control in self._controls:
@@ -153,6 +193,21 @@ class VideoWidget(QWidget):
         if self.trim_start_ms < self.player.position() + step < self.player.duration():
             self.player.setPosition(self.player.position() + step)
 
+    def set_trim(self):
+        self.trim_start_ms = self.player.position()
+        timecode =  self._fmt_timecode(self._ms_to_timecode(self.trim_start_ms))
+        self.trim_label.setText(timecode)
+        self.scrubber.setRange(self.trim_start_ms, self.player.duration())
+        self.player.setPosition(self.trim_start_ms)
+
+    def clear_trim(self):
+        """Remove the trim-in point and restore full range."""
+        self.trim_start_ms = 0
+        self.trim_label.setText(f"No trim set")
+        self.scrubber.setRange(0, self.player.duration())
+
+    def get_trim(self):
+        print(self.trim_start_ms)
 
     def load_video(self, file_path):
         self.player.stop()
