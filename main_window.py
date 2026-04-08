@@ -27,9 +27,8 @@ class MainWindow(QMainWindow):
         
     def _create_widgets(self):
         self.video_pane = VideoWidget(SpanKeeper(), self.time_keeper)
-        self.timeline = TimelineWidget()
-        self.timeline.connect_signals(self.time_keeper)
-
+        self.timeline = TimelineWidget(self.time_keeper)
+    
         self.comments = CommentWidget()
         self.comments.connect_signals(self.time_keeper)
 
@@ -42,7 +41,7 @@ class MainWindow(QMainWindow):
 
         # LEFT vertical layout (Video + Timeline)
         left_layout = QVBoxLayout()
-        left_layout.addWidget(self.video_pane, stretch=3)
+        left_layout.addWidget(self.video_pane, stretch=2)
         left_layout.addWidget(self.timeline, stretch=1)
 
         # Add layouts to main layout
@@ -66,7 +65,7 @@ class MainWindow(QMainWindow):
             self,
             "Open Sensor Data File",
             "",
-            "CSV Files (*.csv);;All Files (*)"
+            "CSV Files (*.h5);;All Files (*)"
         )
 
         if file_path:
