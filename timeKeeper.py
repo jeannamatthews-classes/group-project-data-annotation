@@ -11,13 +11,17 @@ class TimeKeeper(QObject):
     def __init__(self):
         super().__init__()
         self.time = 0
+        self.trim = 0
         self.windowSize = 0
         self.windowStart = 0
         self.windowEnd = 0
 
     def _on_positionChanged(self, position):
-        self.time = position
-        self.positionChanged.emit(position)
+        self.time = position - self.trim
+        self.positionChanged.emit(position - self.trim)
+
+    def set_trim(self, trim: int):
+        self.trim = trim
 
     def set_player(self, player: QMediaPlayer):
         self.player = player
