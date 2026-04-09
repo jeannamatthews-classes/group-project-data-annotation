@@ -15,7 +15,7 @@ from util.span_keeper import SpanKeeper
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        
+
         self.setWindowTitle("Video Editor Layout")
         self.resize(1200, 800)
 
@@ -24,11 +24,13 @@ class MainWindow(QMainWindow):
         self._create_widgets()
         self._create_layout()
         self._create_menu()
-        
+
     def _create_widgets(self):
         self.video_pane = VideoWidget(SpanKeeper(), self.time_keeper)
-        self.timeline = TimelineWidget(self.time_keeper)
-    
+
+        self.timeline = TimelineWidget()
+        self.timeline.connect_signals(self.time_keeper)
+
         self.comments = CommentWidget()
         self.comments.connect_signals(self.time_keeper)
 
@@ -65,7 +67,7 @@ class MainWindow(QMainWindow):
             self,
             "Open Sensor Data File",
             "",
-            "CSV Files (*.h5);;All Files (*)"
+            "HDF5 Files (*.hdf *.h5 *.hdf5 *.he5);;All Files (*)"
         )
 
         if file_path:
