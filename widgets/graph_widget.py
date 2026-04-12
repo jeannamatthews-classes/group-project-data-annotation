@@ -2,8 +2,6 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout
 import pyqtgraph as pg
 import numpy as np
 
-from util.hdf5_reader import HDF5Reader
-
 
 class TimeAxisItem(pg.AxisItem):
     def tickStrings(self, values, scale, spacing):
@@ -21,7 +19,7 @@ class TimeAxisItem(pg.AxisItem):
         return strings
 
 class Graph(QWidget):
-    def __init__(self, reader: HDF5Reader):
+    def __init__(self, reader):
         super().__init__()
 
         self.reader = reader
@@ -41,12 +39,10 @@ class Graph(QWidget):
         self._curve_init()
         self._find_offset()
 
-    def _create_ui(self):
-        layout = QVBoxLayout()
-        layout.addWidget(self.plot)
-        self.setLayout(layout)
-
     def update_plot(self):
+        if self.reader is None:
+            return
+
         chunks = self.reader.get_chunks_by_time(self.current_time, self.margin)
 
         data_a, *_ = chunks.get(self.sensor_a)
@@ -71,10 +67,15 @@ class Graph(QWidget):
         self.current_time = position
         self.update_plot()
 
+    def _create_ui(self):
+        layout = QVBoxLayout()
+        layout.addWidget(self.plot)
+        self.setLayout(layout)
+
     def _plot_init(self):
         axis = TimeAxisItem(orientation="bottom")
         self.plot = pg.PlotWidget(axisItems={"bottom": axis})
-        self.plot.setMouseEnabled(x=False, y=False)
+        self.plot.setMouseEnabled(x=True, y=False)
 
         if self.reader is None:
             return
