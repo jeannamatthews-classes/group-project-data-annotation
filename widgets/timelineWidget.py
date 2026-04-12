@@ -24,6 +24,12 @@ class TimelineWidget(QWidget):
         layout.addWidget(self.graph)
         self.setLayout(layout)
 
+    def connect_signals(self, time_keeper: TimeKeeper):
+        self.time_keeper = time_keeper
+
+        time_keeper.positionChanged.connect(self._on_position_changed)
+        time_keeper.windowChanged.connect(self._on_window_changed)
+
     def load_data(self, data_path: str):
         old_graph = self.graph
         self.layout().removeWidget(old_graph)
@@ -31,12 +37,13 @@ class TimelineWidget(QWidget):
 
         reader = HDF5Reader(Path(data_path), idx_mode=False)
         self.graph = Graph(reader)
-        self.layout().addWidget(self.graph)
-        self.graph.update_position(0)
 
-    def connect_signals(self, time_keeper: TimeKeeper):
-        time_keeper.positionChanged.connect(self._on_position_changed)
-        time_keeper.windowChanged.connect(self._on_window_changed)
+        if self.time_keeper is None:
+            self.graph.update_position(0)
+        else:
+            self.graph.update_position(self.time_keeper.get_time())
+
+        self.layout().addWidget(self.graph)
 
     def _on_position_changed(self, position):
         self.graph.update_position(position)

@@ -2,8 +2,6 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout
 import pyqtgraph as pg
 import numpy as np
 
-from util.hdf5_reader import HDF5Reader
-
 
 class TimeAxisItem(pg.AxisItem):
     def tickStrings(self, values, scale, spacing):
@@ -21,7 +19,7 @@ class TimeAxisItem(pg.AxisItem):
         return strings
 
 class Graph(QWidget):
-    def __init__(self, reader: HDF5Reader):
+    def __init__(self, reader):
         super().__init__()
 
         self.reader = reader
@@ -47,6 +45,9 @@ class Graph(QWidget):
         self.setLayout(layout)
 
     def update_plot(self):
+        if self.reader is None:
+            return
+
         chunks = self.reader.get_chunks_by_time(self.current_time, self.margin)
 
         data_a, *_ = chunks.get(self.sensor_a)
