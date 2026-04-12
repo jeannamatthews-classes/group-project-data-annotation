@@ -4,15 +4,21 @@ import numpy as np
 
 from util.hdf5_reader import HDF5Reader
 
+
 class TimeAxisItem(pg.AxisItem):
     def tickStrings(self, values, scale, spacing):
         hr = [v / 1000 // 3600 for v in values]
         min = [v / 1000 // 60 % 60 for v in values]
         sec = [v // 1000 % 60 for v in values]
         mil = [v % 1000 for v in values]
-        print(values)
 
-        return ["%.2d:%.2d:%.2d:%.3d" % (hr[i], min[i], sec[i], mil[i]) for i in range(len(values))]
+        strings = []
+        for i in range(len(values)):
+            if values[i] < 0:
+                strings.append("")
+            else:
+                strings.append("%.2d:%.2d:%.2d:%.3d" % (hr[i], min[i], sec[i], mil[i]))
+        return strings
 
 class Graph(QWidget):
     def __init__(self, reader: HDF5Reader):
@@ -75,7 +81,6 @@ class Graph(QWidget):
 
         # multiply by 1.05 in order to only pad the top
         self.plot.setYRange(0, self.reader.accl_range * 1.05, 0)
-        self.plot.addItem(pg.InfiniteLine(angle=0, pen=pg.mkPen("gray", width=1)))
         self.vline = pg.InfiniteLine(pen=pg.mkPen("w", width=2))
         self.plot.addItem(self.vline)
 
