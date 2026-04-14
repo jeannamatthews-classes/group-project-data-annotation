@@ -1,7 +1,8 @@
-from dataclasses import dataclass
 from typing import Optional, List
+import qtawesome as qta
 
 from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -16,12 +17,10 @@ from PySide6.QtWidgets import (
     QCheckBox,
 )
 
+from timeKeeper import TimeKeeper
+from util.comment_keeper import CommentKeeper, CommentEntry
 
-@dataclass
-class CommentEntry:
-    timestamp_ms: int
-    data_point: str
-    comment: str
+
 
 
 def format_ms(ms: int) -> str:
@@ -37,11 +36,14 @@ def format_ms(ms: int) -> str:
 class CommentWidget(QWidget):
     jumpRequested = Signal(int)  # timestamp in ms
 
-    def __init__(self):
+    def __init__(self, timekeeper: TimeKeeper):
         super().__init__()
+        self.time_keeper = timekeeper
         self.current_timestamp_ms = 0
-        self.comments: List[CommentEntry] = []
+        self.comment_keeper = CommentKeeper
         self._create_ui()
+
+        self.time_keeper.positionChanged.connect(self._on_position_changed)
 
     def _create_ui(self):
         layout = QVBoxLayout(self)
@@ -54,33 +56,63 @@ class CommentWidget(QWidget):
         self.timestamp_label = QLabel("Current video time: 00:00")
         layout.addWidget(self.timestamp_label)
 
-        self.use_current_time_checkbox = QCheckBox("Use current video time")
-        self.use_current_time_checkbox.setChecked(True)
-        layout.addWidget(self.use_current_time_checkbox)
 
-        timestamp_row = QHBoxLayout()
-        timestamp_row.addWidget(QLabel("Timestamp (ms):"))
-        self.timestamp_input = QLineEdit()
-        self.timestamp_input.setPlaceholderText("Auto-filled from video")
-        self.timestamp_input.setEnabled(False)
-        timestamp_row.addWidget(self.timestamp_input)
-        layout.addLayout(timestamp_row)
+        # Start and End Time Fields
+        # Create Icon
+        icon = qta.icon('ei.time', color='gray')
 
-        self.use_current_time_checkbox.toggled.connect(self._on_time_mode_changed)
+        # Setup Icon Actions
+        self.start_time_action = QAction(icon, "Use Current Time", self)
+        self.end_time_action = QAction(icon, "Use Current Time", self)
 
-        data_row = QHBoxLayout()
-        data_row.addWidget(QLabel("Data point:"))
-        self.data_point_input = QLineEdit()
-        self.data_point_input.setPlaceholderText("Optional: CSV value / label / row id")
-        data_row.addWidget(self.data_point_input)
-        layout.addLayout(data_row)
+        # Start Time Field
+        start_time_row = QHBoxLayout()
+        start_time_row.addWidget(QLabel("Start Time"))
+        self.start_time_input = QLineEdit()
+        self.start_time_action.triggered.connect(self._start_use_current_time)
+        self.start_time_input.addAction(self.start_time_action, QLineEdit.ActionPosition.TrailingPosition)
+        start_time_row.addWidget(self.start_time_input)
+        layout.addLayout(start_time_row)
 
+        # End Time Field
+        end_time_row = QHBoxLayout()
+        end_time_row.addWidget(QLabel("End Time"))
+        self.end_time_input = QLineEdit()
+        self.end_time_action.triggered.connect(self._end_use_current_time)
+        self.end_time_input.addAction(self.end_time_action, QLineEdit.ActionPosition.TrailingPosition)
+        end_time_row.addWidget(self.end_time_input)
+        layout.addLayout(end_time_row)
+
+
+        # Sidedness
+        side_row = QHBoxLayout()
+        side_row.addWidget(QLabel("Sidedness:"))
+        self.side_input = QLineEdit()
+        side_row.addWidget(self.side_input)
+        layout.addLayout(side_row)
+
+        # RASS
+        rass_row = QHBoxLayout()
+        rass_row.addWidget(QLabel("RASS:"))
+        self.rass_input = QLineEdit()
+        rass_row.addWidget(self.rass_input)
+        layout.addLayout(rass_row)
+
+        # Movement Characteristic -- TODO: Change this to a dropdown
+        movement_row = QHBoxLayout()
+        movement_row.addWidget(QLabel("Movement:"))
+        self.movement_input = QLineEdit()
+        movement_row.addWidget(self.movement_input)
+        layout.addLayout(movement_row)
+
+        # Comment
         layout.addWidget(QLabel("Comment text:"))
         self.comment_input = QTextEdit()
         self.comment_input.setPlaceholderText("Enter your annotation here...")
         self.comment_input.setFixedHeight(120)
         layout.addWidget(self.comment_input)
 
+        # Button
         button_row = QHBoxLayout()
         self.add_button = QPushButton("Add Comment")
         self.clear_button = QPushButton("Clear Inputs")
@@ -88,53 +120,53 @@ class CommentWidget(QWidget):
         button_row.addWidget(self.clear_button)
         layout.addLayout(button_row)
 
-        layout.addWidget(QLabel("Saved comments:"))
-        self.comment_list = QListWidget()
-        layout.addWidget(self.comment_list, stretch=1)
-
-        self.add_button.clicked.connect(self.add_comment)
+        # self.add_button.clicked.connect(self.add_comment)
         self.clear_button.clicked.connect(self.clear_inputs)
-        self.comment_list.itemDoubleClicked.connect(self._jump_to_comment)
+        # self.comment_list.itemDoubleClicked.connect(self._jump_to_comment)
 
-    def _on_time_mode_changed(self, checked: bool):
-        self.timestamp_input.setEnabled(not checked)
-        if checked:
-            self.timestamp_input.clear()
+        # Comments UI
+        self.comment_keeper.comments_ui(self.comment_keeper, layout)
 
-    def set_current_timestamp(self, timestamp_ms: int):
-        self.current_timestamp_ms = timestamp_ms
-        self.timestamp_label.setText(f"Current video time: {format_ms(timestamp_ms)}")
+    def _on_position_changed(self, position):
+        self.current_timestamp_ms = position
+        self.timestamp_label.setText(f"Current video time: {format_ms(self.timestamp_ms)}")
 
-    def add_comment(self):
-        comment_text = self.comment_input.toPlainText().strip()
-        data_point = self.data_point_input.text().strip()
+    def _start_use_current_time(self):
+        self.start_time_input = self.time_keeper.time
 
-        if not comment_text:
-            QMessageBox.warning(self, "Missing Comment", "Please enter comment text.")
-            return
+    def _end_use_current_time(self):
+        self.end_time_input = self.time_keeper.time
 
-        if self.use_current_time_checkbox.isChecked():
-            timestamp_ms = self.current_timestamp_ms
-        else:
-            raw = self.timestamp_input.text().strip()
-            if not raw.isdigit():
-                QMessageBox.warning(
-                    self,
-                    "Invalid Timestamp",
-                    "Timestamp must be an integer number of milliseconds.",
-                )
-                return
-            timestamp_ms = int(raw)
+    # def add_comment(self):
+    #     comment_text = self.comment_input.toPlainText().strip()
+    #     data_point = self.data_point_input.text().strip()
 
-        entry = CommentEntry(
-            timestamp_ms=timestamp_ms,
-            data_point=data_point,
-            comment=comment_text,
-        )
-        self.comments.append(entry)
-        self._add_list_item(entry)
-        self.comment_input.clear()
-        self.data_point_input.clear()
+    #     if not comment_text:
+    #         QMessageBox.warning(self, "Missing Comment", "Please enter comment text.")
+    #         return
+
+    #     if self.use_current_time_checkbox.isChecked():
+    #         timestamp_ms = self.current_timestamp_ms
+    #     else:
+    #         raw = self.timestamp_input.text().strip()
+    #         if not raw.isdigit():
+    #             QMessageBox.warning(
+    #                 self,
+    #                 "Invalid Timestamp",
+    #                 "Timestamp must be an integer number of milliseconds.",
+    #             )
+    #             return
+    #         timestamp_ms = int(raw)
+
+    #     entry = CommentEntry(
+    #         timestamp_ms=timestamp_ms,
+    #         data_point=data_point,
+    #         comment=comment_text,
+    #     )
+    #     self.comments.append(entry)
+    #     self._add_list_item(entry)
+    #     self.comment_input.clear()
+    #     self.data_point_input.clear()
 
     def _add_list_item(self, entry: CommentEntry):
         header = format_ms(entry.timestamp_ms)

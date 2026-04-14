@@ -30,8 +30,7 @@ class MainWindow(QMainWindow):
         self.timeline = TimelineWidget()
         self.timeline.connect_signals(self.time_keeper)
 
-        self.comments = CommentWidget()
-        self.comments.connect_signals(self.time_keeper)
+        self.comments = CommentWidget(self.time_keeper)
 
     def _create_layout(self):
         central_widget = QWidget()
