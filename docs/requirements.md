@@ -37,7 +37,7 @@ The annotations which are described in detail in C2 are all related to the Richm
 The MVP must be capable of the following: importing the signals and video, playing back the video, and exportable annotations.
 
 ## A2. Requirements/Dependencies
-Python version 3.13.12, PySide6 version 6.2.7, ruptures version 1.1.10, numpy, scipy, h5py, opencv
+Python version 3.13.12, PySide6 version 6.2.7, ruptures version 1.1.10, numpy, scipy, h5py
 
 # B. Input/Output
 ## B1. Video
@@ -105,11 +105,11 @@ The seek function finds and allows users to jump to a point in time where there 
 * Get timestamps of the change points and give them to the video player so it can “jump” to them.
 
 ## C4. Sensor Timeline (TimelineWidget)
-The sensor timeline makes use of the grapher and csv reader to display sequential data points from various sensors in a configurable UI element.
+The sensor timeline uses a grapher with an hdf5 reader to display sequential data points from various sensors in a configurable UI element.
 * Shows a line graph of sensor data for easy visualization
-* 3 graphs with 3 lines each for x, y, and z values of the 3 sensors used
-* Reads the data with csv reader and displays it with grapher
-* Responsible for the synchronization between the two systems
+* A graph with 2 lines for the magnitude values of 2 sensors used
+* Responsible for the creation of a new graph when loading data
+* Connects data offset adjustment controls with the graph for aligning sensor times
 
 ## C5. Alignment
 The alignment process will involve being able to specify how many indices to skip. It will give the appearance of cropping but the files are not edited. After the alignment process is finished the user will be able to lock the modalities together as to avoid accidentally unsyncing them, additionally the user will be able to save the new starting indices to be loaded at a future time
@@ -136,10 +136,11 @@ The SpanKeeper allows for the creation and storage of individual Spans which sto
 * Begin flag and end flag button from video player act as input
 
 ## D4. Grapher
-The Grapher manages a graphics system for drawing a data graph inside of a widget. It dynamically resizes based on window size and numerous other configurable parameters.
-* Used by timeline to display the sensor data received from csv reader
-* Allow user interaction to manipulate graph parameters using scrolling with modifier keys and possibly a settings menu
-* Automatically scrolls with video and can be scrolled by the user as well
+The Grapher manages a graphics system for drawing a line graph of data over time inside of a widget. It dynamically resizes and follows the video time for position with a cursor in the center of the graph for reference.
+* Managed by timeline widget
+* Automatically scrolls in sync with video when playing or scrubbing
+* User can zoom and pan the x-axis when video is paused, then resets once played
+* More advanced control behind context menu from right clicking
 
 ## D5. HDF5 reader
 The HDF5 Reader module is responsible for handling the dynamic loading of the of the 9-axis IMU sensor data. The module uses HDF5 underlying functionality to chunk the data enabling us to not load any more data into RAM than we are displaying this is especially critical because of the potentially very large files (upto 72 hours).
