@@ -39,11 +39,6 @@ class Graph(QWidget):
         self._curve_init()
         self._find_offset()
 
-    def _create_ui(self):
-        layout = QVBoxLayout()
-        layout.addWidget(self.plot)
-        self.setLayout(layout)
-
     def update_plot(self):
         if self.reader is None:
             return
@@ -72,10 +67,15 @@ class Graph(QWidget):
         self.current_time = position
         self.update_plot()
 
+    def _create_ui(self):
+        layout = QVBoxLayout()
+        layout.addWidget(self.plot)
+        self.setLayout(layout)
+
     def _plot_init(self):
         axis = TimeAxisItem(orientation="bottom")
         self.plot = pg.PlotWidget(axisItems={"bottom": axis})
-        self.plot.setMouseEnabled(x=False, y=False)
+        self.plot.setMouseEnabled(x=True, y=False)
 
         if self.reader is None:
             return

@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QHBoxLayout, QComboBox, QLabel, QCheckBox, QLineEdit
-from PySide6.QtMultimedia import QMediaPlayer
+from PySide6.QtMultimedia import QMediaPlayer, QMediaMetaData
 from PySide6.QtMultimediaWidgets import QVideoWidget
 from PySide6.QtCore import QUrl, QTimer, Qt
 from widgets.highlight_slider import HighlightSlider
@@ -229,20 +229,14 @@ class VideoWidget(QWidget):
         self.player.setSource(QUrl.fromLocalFile(file_path))
         QTimer.singleShot(0, self.player.pause)
 
-        import cv2
-        cap = cv2.VideoCapture(file_path)
-        self.fps = cap.get(cv2.CAP_PROP_FPS)
-        cap.release()
-
-        self.player.mediaStatusChanged.connect(self._on_media_loaded)
+        self.player.mediaStatusChanged.connect(self._on_media_loaded, Qt.SingleShotConnection)
 
         for control in self._controls:
             control.setEnabled(True)
 
     def _on_media_loaded(self, status):
         if status == QMediaPlayer.MediaStatus.LoadedMedia:
-            self.player.mediaStatusChanged.disconnect(self._on_media_loaded)
-
+            self.fps = self.player.metaData().value(QMediaMetaData.VideoFrameRate)
             self.total_duration = self._ms_to_timecode(self.player.duration())
             total_duration_time_code = self._fmt_timecode(self.total_duration)
             self.time_label.setText(f"00:00:00:00 / {total_duration_time_code}")

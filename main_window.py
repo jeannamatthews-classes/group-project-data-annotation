@@ -28,8 +28,7 @@ class MainWindow(QMainWindow):
     def _create_widgets(self):
         self.video_pane = VideoWidget(SpanKeeper(), self.time_keeper)
 
-        self.timeline = TimelineWidget()
-        self.timeline.connect_signals(self.time_keeper)
+        self.timeline = TimelineWidget(self.time_keeper)
 
         self.comments = CommentWidget()
         self.comments.connect_signals(self.time_keeper)

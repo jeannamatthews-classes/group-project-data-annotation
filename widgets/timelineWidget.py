@@ -10,25 +10,14 @@ from timeKeeper import TimeKeeper
 
 
 class TimelineWidget(QWidget):
-    def __init__(self, data_path: str | None = None):
+    def __init__(self, time_keeper: TimeKeeper):
         super().__init__()
 
-        self.graph = Graph(data_path)
-
-        self._create_ui()
-
-    def _create_ui(self):
-        layout = QVBoxLayout()
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
-        layout.addWidget(self.graph)
-        self.setLayout(layout)
-
-    def connect_signals(self, time_keeper: TimeKeeper):
         self.time_keeper = time_keeper
+        self.graph = Graph(None)
 
-        time_keeper.positionChanged.connect(self._on_position_changed)
-        time_keeper.windowChanged.connect(self._on_window_changed)
+        self._create_layout()
+        self._connect_signals()
 
     def load_data(self, data_path: str):
         old_graph = self.graph
@@ -39,11 +28,24 @@ class TimelineWidget(QWidget):
         self.graph = Graph(reader)
 
         if self.time_keeper is None:
-            self.graph.update_position(0)
+            pos = 0
         else:
-            self.graph.update_position(self.time_keeper.get_time())
+            pos = self.time_keeper.get_time()
+
+        self.graph.update_position(pos)
 
         self.layout().addWidget(self.graph)
+
+    def _create_layout(self):
+        layout = QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        layout.addWidget(self.graph)
+        self.setLayout(layout)
+
+    def _connect_signals(self):
+        self.time_keeper.positionChanged.connect(self._on_position_changed)
+        self.time_keeper.windowChanged.connect(self._on_window_changed)
 
     def _on_position_changed(self, position):
         self.graph.update_position(position)
