@@ -1,37 +1,37 @@
 # Table of Contents
 
-## A. Introduction 
-1) MVP
-2) Requirements
+## A. Introduction
+1) [MVP](#a1-mvp)
+2) [Requirements](#a2-requirementsdependencies)
 ## B. Input/Output
-1) Video
-2) 9-axis IMU
-3) Annotations
+1) [Video](#b1-video)
+2) [9-axis IMU](#b2-9-axis-imu)
+3) [Annotations](#b3-annotation-inputoutput)
 ## C. Features
-1) Video Player
-2) Annotation
-3) Seek (non-critical)
-4) Sensor Timeline
-5) Alignment 
-## D. Modules 
-1) Architecture / Class interaction diagram
-2) TimeKeeper
-3) Grapher
-4) CSV reader
-5) SpanKeeper
-6) JSON reader/writer
+1) [Video Player](#c1-video-player-video-widget)
+2) [Annotation](#c2-annotation)
+3) [Seek (non-critical)](#c3-seek)
+4) [Sensor Timeline](#c4-sensor-timeline-timelinewidget)
+5) [Alignment](#c5-alignment)
+## D. Modules
+1) [Architecture / Class interaction diagram](#d1-architecture--class-interaction-diagram)
+2) [TimeKeeper](#d2-timekeeper)
+3) [SpanKeeper](#d3-spankeeper)
+4) [Grapher](#d4-grapher)
+5) [HDF5 reader](#d5-hdf5-reader)
+6) [JSON reader/writer](#d6-json-readerwriter)
 ## E. Workflow
-1) Annotation
-2) Interaction diagram
-3) Alignment
-## F. UI
-1) Graphical hierarchy
+1) [Annotation](#e1-annotation)
+2) [User Interface](#e2-ui)
+3) [Alignment](#e3-alignment)
+
+---
 
 # A. Introduction
 A standalone Python program that runs on Windows to be used by medical researchers to annotate videos paired with waveforms from accelerometers, gyroscopes, and magnetometers. The video and signals are aligned allowing the user to assign meaning to the signals based on what is happening in the videos. The program must allow video navigation, variable playback, annotation, and a seek function. For annotation the user needs to select a portion of the video and then input their annotation/comments. The seek function needs to identify jumps or large changes in the waveform and display the corresponding video portion.
 
 The annotations which are described in detail in C2 are all related to the Richmond Agitation Sedation Scale or RASS. This score is used in ICU setting to quantify how agitated a given patient. These annotations will be used to train a model that can act as a "nanny" autonomously monitoring patients 
-![alt text](./documentation_images/RASS_chart.jpeg)
+![RASS chart](./documentation_images/RASS_chart.jpeg)
 
 ## A1. MVP 
 The MVP must be capable of the following: importing the signals and video, playing back the video, and exportable annotations.
@@ -86,7 +86,7 @@ Python version 3.13.12, PySide6 version 6.2.7, ruptures version 1.1.10, numpy, s
   - Lock Trim (prevents setting or clearing trim)
   - Get Trim (prints trim in ms to console)
 
-![alt text](./documentation_images/navigation_bar.png)
+![Screenshot of video controls](./documentation_images/navigation_bar.png)
 
 ## C2. Annotation
 Two types of annotations span annotation and instantaneous annotations. Span annotations are annotations that span from a start time to stop time. Instantaneous annotations are annotations for specific points in time
@@ -120,7 +120,8 @@ The alignment process will involve being able to specify how many indices to ski
 
 # D. Modules
 ## D1. Architecture / Class Interaction Diagram
-![alt text](./documentation_images/class_interaction_diagram.png)
+
+![Class interaction diagram](./documentation_images/class_interaction_diagram.png)
 
 ## D2. TimeKeeper
 The TimeKeeper module is responsible for keeping track of the current position in the video and syncing all other widgets to that time. It will be created as a singleton and be assigned the QMediaPlayer created by the VideoWidget. The TimeKeeper module monitors the positionChanged signal emitted by the QMediaPlayer to keep track of the current position. It then emits a signal that the other widgets monitor. The TimeKeeper keeps track of the following:
@@ -159,15 +160,20 @@ The JSON Reader/Writer module is responsible for the persistent storage of annot
 # E. Workflow
 ## E1. Annotation 
 Note this illustrates the process for span annotations. The process for instantaneous annotations is the same except you press the flag button
-![alt text](./documentation_images/use_case_diagram.png)
+
+![Use case diagram for creating annotations](./documentation_images/use_case_diagram.png)
 
 ## E2. UI
 The figures below show our target user interface and a QT layout to achieve it. Small details like video controls and dropdown menus are not shown here and are subject to change during the design and testing process as a deeper understanding of the workflow is obtained.
 
-![alt text](./documentation_images/UI_diagram.png)
+![UI Sketch](./documentation_images/UI_diagram.png)
 
-![alt text](./documentation_images/UI_diagram_pyside.png)
+![Qt container layout diagram](./documentation_images/UI_diagram_pyside.png)
 
 ## E3. Alignment 
 Each sensor and the camera is in its own time system. To sync the modalities each data collection session is started by taking the two sensors one in each hand and smacking them together 3 times in front of the camera. The annotator will be able to use these peaks to align the sensors to one another and then to the video. The program will have (+/-)
 buttons that allow the user to change the t0 of the wave forms and a set trim button to change the displayed beginning of the video.
+
+---
+
+[Go to Table of Contents](#table-of-contents)
