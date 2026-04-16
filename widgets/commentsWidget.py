@@ -9,18 +9,18 @@ from PySide6.QtWidgets import (
     QLabel,
     QPushButton,
     QTextEdit,
-    QListWidget,
+    QComboBox,
     QListWidgetItem,
     QHBoxLayout,
     QLineEdit,
     QMessageBox,
-    QCheckBox,
 )
 
 from timeKeeper import TimeKeeper
 from util.comment_keeper import CommentKeeper, CommentEntry
 
-
+movements = ["Up", "Down", "Left", "Right"]
+RASS = ['-5', '-4', '-3', '-2', '-1', '0', '1', '2', '3', '4']
 
 
 def format_ms(ms: int) -> str:
@@ -94,15 +94,17 @@ class CommentWidget(QWidget):
         # RASS
         rass_row = QHBoxLayout()
         rass_row.addWidget(QLabel("RASS:"))
-        self.rass_input = QLineEdit()
-        rass_row.addWidget(self.rass_input)
+        rass_box = QComboBox()
+        rass_box.addItems((RASS))
+        rass_row.addWidget(rass_box)
         layout.addLayout(rass_row)
 
-        # Movement Characteristic -- TODO: Change this to a dropdown
+        # Movement Characteristic
         movement_row = QHBoxLayout()
         movement_row.addWidget(QLabel("Movement:"))
-        self.movement_input = QLineEdit()
-        movement_row.addWidget(self.movement_input)
+        movement_box = QComboBox();
+        movement_box.addItems(movements)
+        movement_row.addWidget(movement_box)
         layout.addLayout(movement_row)
 
         # Comment
@@ -132,14 +134,15 @@ class CommentWidget(QWidget):
         self.timestamp_label.setText(f"Current video time: {format_ms(self.timestamp_ms)}")
 
     def _start_use_current_time(self):
-        self.start_time_input = self.time_keeper.time
+        self.comment_keeper.start_time_ms = self.current_timestamp_ms
+        self.start_time_input = format_ms(self.current_timestamp_ms)
 
     def _end_use_current_time(self):
-        self.end_time_input = self.time_keeper.time
+        self.comment_keeper.end_time_ms = self.time_keeper.time
+        self.end_time_input = format_ms(self.current_timestamp_ms)
 
     # def add_comment(self):
     #     comment_text = self.comment_input.toPlainText().strip()
-    #     data_point = self.data_point_input.text().strip()
 
     #     if not comment_text:
     #         QMessageBox.warning(self, "Missing Comment", "Please enter comment text.")
