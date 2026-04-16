@@ -5,6 +5,7 @@ from PySide6.QtCore import QUrl, QTimer, Qt
 from widgets.highlight_slider import HighlightSlider
 from timeKeeper import TimeKeeper
 from util.span_keeper import SpanKeeper
+from util.comment_keeper import CommentEntry
 
 class VideoWidget(QWidget):
     def __init__(self, span_keeper: SpanKeeper, time_keeper: TimeKeeper | None = None):
@@ -111,3 +112,6 @@ class VideoWidget(QWidget):
 
     def _on_scrubber_pressed(self):
         self.player.setPosition(self.scrubber.value())
+
+    def set_comments(self, comments: list[CommentEntry]):
+        self.scrubber.set_comments(comments)
