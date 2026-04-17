@@ -37,7 +37,7 @@ The annotations which are described in detail in C2 are all related to the Richm
 The MVP must be capable of the following: importing the signals and video, playing back the video, and exportable annotations.
 
 ## A2. Requirements/Dependencies
-Python version 3.13.12, PySide6 version 6.2.7, ruptures version 1.1.10, numpy, scipy, h5py
+Python version 3.11.2, PySide6 version 6.2.7, ruptures version 1.1.10, numpy, scipy, h5py
 
 # B. Input/Output
 ## B1. Video
