@@ -2,27 +2,64 @@ from dataclasses import dataclass
 from typing import List
 import bisect
 import datetime
+import re
 
 from PySide6.QtWidgets import (
     QLabel,
-    QListWidget,
     QVBoxLayout,
     QMessageBox,
+    QListWidget,
+    QListWidgetItem,
+    QAbstractItemView,
+    QWidget
 )
 
-from PySide6.QtCore import QObject, Signal
+from PySide6.QtCore import QObject, Qt, Signal
+
+from util.popups import save_popup_ui
+
+def format_ms(ms: int) -> str:
+    total_seconds = max(0, ms // 1000)
+    hours = total_seconds // 3600
+    minutes = (total_seconds % 3600) // 60
+    seconds = total_seconds % 60
+    if hours > 0:
+        return f"{hours:02}:{minutes:02}:{seconds:02}"
+    return f"{minutes:02}:{seconds:02}"
+
+""" 
+Accept string of form hh:mm:ss
+Returns time in ms
+    """
+def to_ms(time:str) -> int:
+    pattern = r"^(?:(\d+):)?(\d{2}):(\d{2})$"
+    
+    match = re.match(pattern, time)
+
+    if match:
+        hh, mm, ss = match.groups()
+        
+        # Default hours to '0' if not present
+        hh = hh if hh is not None else "0"
+        
+        return ((hh*60 + mm) * 60 +ss) * 100
+    
+    raise ValueError(f"Invalid time format: '{time}'. Expected 'hh:mm:ss' or 'mm:ss'.")
 
 @dataclass
 class CommentEntry:
-    start_time_ms: int
-    end_time_ms: int
-    side: str
-    RASS: str
-    movement: str
-    comment: str
-    datetime_created: str
+    start_time_ms: int      = 0
+    end_time_ms: int        = 0
+    side: str               = ""
+    RASS: str               = ""
+    movement: str           = ""
+    comment: str            = ""
+    datetime_created: str   = ""
 
-class CommentKeeper(QObject):
+    def __lt__(self, other):
+        return self.start_time_ms < other.start_time_ms
+
+class CommentKeeper(QWidget):
     """
     Keeps track of all project comments including, adding, removing, selecting, and displaying non-selected comments 
     """
@@ -30,9 +67,11 @@ class CommentKeeper(QObject):
     # Create Signal for changing selected comment
     selected_comment_changed = Signal(int)
 
-    def __init__(self):
-        # Call QObject init
+    def __init__(self, list_widget: QListWidget):
+        # Call QObject initPIP
         super().__init__()
+
+        self.list_widget = list_widget
 
         # Create List for comments
         self.comments: List[CommentEntry] = []
@@ -41,16 +80,8 @@ class CommentKeeper(QObject):
         self.select_empty_comment()      
 
     def select_empty_comment(self):
-        emptyComment = CommentEntry
+        emptyComment = CommentEntry()
         self.selected = emptyComment
-
-        self.start_time_ms = 0
-        self.end_time_ms = 0
-        self.side = ""
-        self.RASS = ""
-        self.movement = ""
-        self.comment = ""
-        self.datetime_created = ""
         
         # Keeps track of the current selected index (-1 means new comment)
         self.selected_index = -1
@@ -75,7 +106,7 @@ class CommentKeeper(QObject):
 
         if not newComment == self.selected:
             # Unsaved Changes Exist - Ask to save
-            if self._save_popup_ui(): self.save_comment(newComment)
+            if self._save_popup_ui("Do you want to save your comment changes?"): self.save_comment(newComment)
 
         # Switch Comments
         self.select_comment = self.comments[index]
@@ -92,11 +123,17 @@ class CommentKeeper(QObject):
         self.selected_comment_changed.emmit()
 
     def add_comment(self, newComment: CommentEntry):
-        if not self.datetime_created:
+        if not self.selected.datetime_created:
             self.selected.datetime_created = str(datetime.datetime.now())
-        bisect.insort(self.comments, self.select_comment, key=lambda x: x.start_time_ms)
+        index = bisect.bisect_left(self.comments, newComment)
+        self.comments.insert(index, newComment)
+        self._insert_comment_to_widget(index, newComment)
+
 
     def save_comment(self, newComment: CommentEntry = None):
+        if not self.selected.start_time_ms: 
+            QMessageBox.warning(self, "Missing Start Time", "Please enter Start Time")
+            return
         if not newComment:
             newComment = CommentEntry(
             self.selected.start_time_ms,
@@ -108,38 +145,81 @@ class CommentKeeper(QObject):
             self.selected.datetime_created
             )
         if self.selected_index == -1: self.add_comment(newComment)
-        else: self.comments[self.selected_index] = newComment
-
-        self.select_empty_comment()
+        else: 
+            self.comments[self.selected_index] = newComment
+            self.list_widget.takeItem(self.selected_index)
+            self._append_comment_to_widget(self.selected_index, newComment)
 
     def delete_current_comment(self):
         if self.selected_index == -1:
             raise ValueError
         self.comments.pop(self.selected_index)
+        self.list_widget.takeItem(self.selected_index)
 
         self.select_empty_comment()
 
+    def _format_comment(self, entry: CommentEntry):
+        header = f"{format_ms(entry.start_time_ms)} - {format_ms(entry.end_time_ms)}"
+        
+        
+        preview = entry.comment.replace("\n", " ")
+        if len(preview) > 60:
+            preview = preview[:57] + "..."
+
+        item_text = f"{header}\n{preview}"
+        item = QListWidgetItem(item_text)
+        # item.setData(Qt.ItemDataRole.UserRole, entry.start_time_ms)
+        return item
+
+    def _insert_comment_to_widget(self, index: int, entry: CommentEntry):
+        self.list_widget.insertItem(index, self._format_comment(entry))
+
+    def _append_comment_to_widget(self, entry: CommentEntry):
+        self.list_widget.addItem(self._format_comment(entry))
+
+    def sync_list (self, current_time_ms):
+        index = bisect.bisect_left(self.comments, current_time_ms, key=lambda x: x.start_time_ms)
+        
+        active_index = max(0, index - 1)
+        
+        if active_index < self.list_widget.count():
+            item = self.list_widget.item(active_index)
+            
+            # Scroll so the active comment is at the top (or center)
+            self.list_widget.scrollToItem(item, QAbstractItemView.ScrollHint.PositionAtTop)
+            
+            # Optionally highlight it
+            self.list_widget.setCurrentItem(item)
+
+    def update_start_time(self, time: str):
+        try:  self.select_comment.start_time_ms = to_ms(time)
+        except ValueError as e: QMessageBox.warning(self, f"{e}", "Please enter Valid Time")
+
+    def update_end_time(self, time:str):
+        try:  
+            time_ms = to_ms(time)
+            if self.start_time_ms > self.end_time_ms: 
+                QMessageBox.warning(self, "Start Time must be less than End Time", "Please enter Valid Time")
+            else: self.select_comment.end_time_ms = time_ms
+        except ValueError as e: QMessageBox.warning(self, f"{e}", "Please enter Valid Time")
+
+
+
+
     """ Ingests comments from JSON into object -- IMPLEMENT after JSON_Handler Merge """
-    def import_comments():
+    def import_comments(self):
         pass
 
-    def _save_popup_ui() -> bool:
-        msg_box = QMessageBox()
-        msg_box.setWindowTitle("Save Prompt")
-        msg_box.setText("Do you want to save your Comment Changes?")
+        self.list_widget.setUpdatesEnabled(False) # Prevents flickering
+        self.list_widget.clear()
+        
+        for entry in self.comments:
+            self._append_comment_to_widget(entry)
+            
+        self.list_widget.setUpdatesEnabled(True)
 
-        save_btn = msg_box.addButton("Save", QMessageBox.ActionRole)
-        discard_btn = msg_box.addButton("Don't Save", QMessageBox.DestructiveRole)
+    def save_comments(self):
+        pass
 
-        msg_box.exec()
-
-        if msg_box.clickedButton() == save_btn:
-            return True
-        elif msg_box.clickedButton() == discard_btn:
-            return False
-
-    def comments_ui(self, layout: QVBoxLayout):
-         # Saved Comments
-        layout.addWidget(QLabel("Saved comments:"))
-        self.comment_list = QListWidget()
-        layout.addWidget(self.comment_list, stretch=1)
+if __name__ == "__main__":
+    pass

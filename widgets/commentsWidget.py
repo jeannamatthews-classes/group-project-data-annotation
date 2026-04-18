@@ -13,24 +13,15 @@ from PySide6.QtWidgets import (
     QListWidgetItem,
     QHBoxLayout,
     QLineEdit,
+    QListWidget,
     QMessageBox,
 )
 
 from timeKeeper import TimeKeeper
-from util.comment_keeper import CommentKeeper, CommentEntry
+from util.comment_keeper import CommentKeeper, CommentEntry, format_ms
 
 MOVEMENTS = ["", "Up", "Down", "Left", "Right"]
 RASS = ['', '-5', '-4', '-3', '-2', '-1', '0', '1', '2', '3', '4']
-
-
-def format_ms(ms: int) -> str:
-    total_seconds = max(0, ms // 1000)
-    hours = total_seconds // 3600
-    minutes = (total_seconds % 3600) // 60
-    seconds = total_seconds % 60
-    if hours > 0:
-        return f"{hours:02}:{minutes:02}:{seconds:02}"
-    return f"{minutes:02}:{seconds:02}"
 
 
 class CommentWidget(QWidget):
@@ -40,7 +31,9 @@ class CommentWidget(QWidget):
         super().__init__()
         self.time_keeper = timekeeper
         self.current_timestamp_ms = 0
-        self.comment_keeper = CommentKeeper()
+
+        self.comment_list = QListWidget()
+        self.comment_keeper = CommentKeeper(self.comment_list)
         self._create_ui()
 
         # Conenct to singals
@@ -135,7 +128,8 @@ class CommentWidget(QWidget):
         self.close_button.clicked.connect(self.close_comment)
 
         # Comments UI
-        self.comment_keeper.comments_ui(layout)
+        layout.addWidget(QLabel("Saved comments:"))
+        layout.addWidget(self.comment_list, stretch=1)
 
     def _on_comment_changed(self, index):
         # Write all fields to match new comment
@@ -157,15 +151,16 @@ class CommentWidget(QWidget):
 
     def _on_position_changed(self, position):
         self.current_timestamp_ms = position
-        self.timestamp_label.setText(f"Current video time: {format_ms(self.timestamp_ms)}")
+        self.timestamp_label.setText(f"Current video time: {format_ms(self.current_timestamp_ms)}")
+        self.comment_keeper.sync_list(position)
 
     def _start_use_current_time(self):
-        self.comment_keeper.start_time_ms = self.current_timestamp_ms
-        self.start_time_input = format_ms(self.current_timestamp_ms)
+        self.comment_keeper.selected.start_time_ms = self.current_timestamp_ms
+        self.start_time_input.setText(format_ms(self.current_timestamp_ms))
 
     def _end_use_current_time(self):
-        self.comment_keeper.end_time_ms = self.time_keeper.time
-        self.end_time_input = format_ms(self.current_timestamp_ms)
+        self.comment_keeper.selected.start_time_ms = self.time_keeper.time
+        self.end_time_input.setText(format_ms(self.current_timestamp_ms))
 
     def _add_comment(self):
         self.comment_keeper.add_comment()
@@ -199,4 +194,14 @@ class CommentWidget(QWidget):
         self.comment_input.clear()
 
     def close_comment(self):
-        self.comment_keeper.select_comment(-1)
+        self.comment_keeper.select_empty_comment()
+
+    def _refresh_comments(self):
+
+        for entry in self.comment_keeper.comments:
+            display_text = f"[{entry.start_time_ms}] {entry.comment}"
+            item = QListWidgetItem(display_text)
+            
+            # Link the object to the UI item
+            item.setData(Qt.ItemDataRole.UserRole, entry)
+            self.comments_list.addItem(item)
