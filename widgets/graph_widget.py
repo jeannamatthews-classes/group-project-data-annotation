@@ -22,28 +22,27 @@ class Graph(QWidget):
     def __init__(self, reader):
         super().__init__()
 
-        self.reader = reader
+        self._reader = reader
 
         self.current_time = 0
-        self.margin = 10000 # ms
+        self.margin = 5000 # ms
 
         # single plot
         self._plot_init()
         self._create_ui()
+        self._sensor_init()
 
         # leave empty plot if no data
-        if self.reader is None:
+        if self._reader is None:
             return
 
-        self._sensor_init()
         self._curve_init()
-        self._find_offset()
 
     def update_plot(self):
-        if self.reader is None:
+        if self._reader is None:
             return
 
-        chunks = self.reader.get_chunks_by_time(self.current_time, self.margin)
+        chunks = self._reader.get_chunks_by_time(self.current_time, self.margin)
 
         data_a, *_ = chunks.get(self.sensor_a)
         data_b, *_ = chunks.get(self.sensor_b)
@@ -51,13 +50,13 @@ class Graph(QWidget):
         # --- SENSOR A ---
         if data_a is not None and len(data_a) > 0:
             y_a = data_a[:, 0]
-            x_a = data_a[:, 1] - self.offset_a
+            x_a = data_a[:, 1] - self._reader.get_sync_timestamp(self.sensor_a)
             self.curve_a.setData(x_a, y_a)
 
         # --- SENSOR B ---
         if data_b is not None and len(data_b) > 0:
             y_b = data_b[:, 0]
-            x_b = data_b[:, 1] - self.offset_b
+            x_b = data_b[:, 1] - self._reader.get_sync_timestamp(self.sensor_b)
             self.curve_b.setData(x_b, y_b)
 
         self.plot.setXRange(self.current_time - self.margin, self.current_time + self.margin, 0)
@@ -66,6 +65,10 @@ class Graph(QWidget):
     def update_position(self, position):
         self.current_time = position
         self.update_plot()
+
+    @property
+    def reader(self):
+        return self._reader
 
     def _create_ui(self):
         layout = QVBoxLayout()
@@ -77,17 +80,22 @@ class Graph(QWidget):
         self.plot = pg.PlotWidget(axisItems={"bottom": axis})
         self.plot.setMouseEnabled(x=True, y=False)
 
-        if self.reader is None:
+        if self._reader is None:
             return
 
-        # multiply by 1.05 in order to only pad the top
-        self.plot.setYRange(0, self.reader.accl_range * 1.05, 0)
+        # multiply by 1.05 in order to pad the top
+        self.plot.setYRange(0, self._reader.accl_range * 1.05, 0)
         self.vline = pg.InfiniteLine(pen=pg.mkPen("w", width=2))
         self.plot.addItem(self.vline)
 
     def _sensor_init(self):
         # get sensors (assumes 2)
-        sensors = list(self.reader.get_sensors().keys())
+        if self.reader is None:
+            self.sensor_a = None
+            self.sensor_b = None
+            return
+
+        sensors = list(self._reader.get_sensors().keys())
         if len(sensors) < 2:
             raise ValueError("Need at least 2 sensors to overlay")
 
@@ -101,16 +109,3 @@ class Graph(QWidget):
 
         # optional legend
         self.plot.addLegend()
-
-    def _find_offset(self):
-        # chunks.get() = [data, start, stop]
-        # data = [[val,time]]
-        # data[0][1] = first time
-
-        # temporary toggle to get only first item
-        self.reader.idx_mode = True
-        chunks = self.reader.get_chunks_by_time(0, 1)
-        self.reader.idx_mode = False
-
-        self.offset_a = chunks.get(self.sensor_a)[0][0][1]
-        self.offset_b = chunks.get(self.sensor_b)[0][0][1]

@@ -28,6 +28,10 @@ class HDF5Reader():
         with h5py.File(self.filepath, "r") as f:
             return float(f[sensor_mac_addr][sync_idx, 14])
 
+    def reset_mins(self):
+        for sensor in self.sensors:
+            self.sensors[sensor] = 0
+
     def set_min(self, sensor_mac_addr: str, new_min: int) -> NoReturn:
         """Allows user to adjust the min of the given sensor this enables them to set a new t0
             Args:
