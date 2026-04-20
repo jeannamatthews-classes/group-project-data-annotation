@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import QSlider, QStyleOptionSlider, QStyle
 from PySide6.QtGui import QPainter, QColor, QPen
-from PySide6.QtCore import Qt, QPointF
+from PySide6.QtCore import Qt, QPointF, QSize
 from util.span_keeper import SpanKeeper
 from util.comment_keeper import CommentEntry
 from collections import defaultdict
@@ -21,6 +21,14 @@ class HighlightSlider(QSlider):
         self._comments = list(comments)
         self.update()
 
+    def sizeHint(self):
+        s = super().sizeHint()
+        return QSize(s.width(), max(s.height(), 52))
+    
+    def minimumSizeHint(self):
+        s = super().minimumSizeHint()
+        return QSize(s.width(), max(s.height(), 52))
+
     def paintEvent(self, event):
         opt = QStyleOptionSlider()
         self.initStyleOption(opt)
@@ -35,7 +43,7 @@ class HighlightSlider(QSlider):
         )
         handle_half = handle_rect.width() // 2
 
-        groove_y = groove_rect.center().y()
+        groove_y = groove_rect.center().y() + 6
         groove_height = 4
         x_start = groove_rect.x() + handle_half
         x_end = groove_rect.right() - handle_half
@@ -97,7 +105,7 @@ class HighlightSlider(QSlider):
                 )
 
                 radius = 8 if active else 5
-                bubble_y = groove_y - 12
+                bubble_y = max(radius + 3, groove_y - 10)
 
                 painter.setPen(QPen(QColor(200, 60, 60), 1.5))
                 painter.setBrush(
@@ -106,11 +114,7 @@ class HighlightSlider(QSlider):
                 painter.drawEllipse(QPointF(x, bubble_y), radius, radius)
 
                 if len(entries) > 1:
-                    painter.drawText(
-                        x - radius,
-                        bubble_y + 4,
-                        str(len(entries))
-                    )
+                    painter.drawText(x - radius, bubble_y + 4, str(len(entries)))
 
         # Draw handle on top of everything
         opt2 = QStyleOptionSlider()

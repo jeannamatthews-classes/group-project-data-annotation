@@ -2,10 +2,13 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QHBoxLayout, QC
 from PySide6.QtMultimedia import QMediaPlayer
 from PySide6.QtMultimediaWidgets import QVideoWidget
 from PySide6.QtCore import QUrl, QTimer, Qt
+
 from widgets.highlight_slider import HighlightSlider
+from widgets.comment_marker_strip import CommentMarkerStrip
 from timeKeeper import TimeKeeper
 from util.span_keeper import SpanKeeper
 from util.comment_keeper import CommentEntry
+
 
 class VideoWidget(QWidget):
     def __init__(self, span_keeper: SpanKeeper, time_keeper: TimeKeeper | None = None):
@@ -13,20 +16,30 @@ class VideoWidget(QWidget):
         self.time_keeper = time_keeper
         self.span_keeper = span_keeper
         self.start_mark_set = False
+
         self._create_ui()
-        
+
     def _create_ui(self):
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(2)
+
         self.video_widget = QVideoWidget()
         layout.addWidget(self.video_widget)
+
         self.player = QMediaPlayer()
-        self.time_keeper.set_player(self.player)
+        if self.time_keeper is not None:
+            self.time_keeper.set_player(self.player)
         self.player.setVideoOutput(self.video_widget)
-        
+
+        self.comment_strip = CommentMarkerStrip()
+        layout.addWidget(self.comment_strip)
+
         self.scrubber = HighlightSlider(Qt.Orientation.Horizontal, self.span_keeper)
         self.scrubber.setRange(0, 0)
+        self.scrubber.setFixedHeight(52)
         layout.addWidget(self.scrubber)
-        
+
         button_layout = QHBoxLayout()
         button_layout.addStretch()
 
@@ -38,7 +51,6 @@ class VideoWidget(QWidget):
         self.add_mark_button.setFixedWidth(80)
         button_layout.addWidget(self.add_mark_button)
 
-        # Playback speed dropdown
         speed_label = QLabel("Speed:")
         button_layout.addWidget(speed_label)
 
@@ -56,6 +68,8 @@ class VideoWidget(QWidget):
         self.add_mark_button.clicked.connect(self.add_mark)
         self.player.positionChanged.connect(self._on_position_changed)
         self.player.durationChanged.connect(self._on_duration_changed)
+        self.player.positionChanged.connect(self.comment_strip.set_position)
+        self.player.durationChanged.connect(self.comment_strip.set_duration)
         self.scrubber.sliderMoved.connect(self._on_scrubber_moved)
         self.scrubber.sliderPressed.connect(self._on_scrubber_pressed)
         self.speed_combo.currentTextChanged.connect(self._on_speed_changed)
@@ -65,7 +79,7 @@ class VideoWidget(QWidget):
         self.player.setPlaybackRate(speed)
 
     def load_video(self, file_path):
-        self.player.stop()  
+        self.player.stop()
         self.player.setSource(QUrl.fromLocalFile(file_path))
         QTimer.singleShot(0, self.player.pause)
 
@@ -99,7 +113,6 @@ class VideoWidget(QWidget):
             self.play_button.setText("Play")
 
     def _on_position_changed(self, position):
-        # Block signals to prevent seek loop while updating slider position
         self.scrubber.blockSignals(True)
         self.scrubber.setValue(position)
         self.scrubber.blockSignals(False)
@@ -114,4 +127,5 @@ class VideoWidget(QWidget):
         self.player.setPosition(self.scrubber.value())
 
     def set_comments(self, comments: list[CommentEntry]):
-        self.scrubber.set_comments(comments)
+        self.comment_strip.set_comments(comments)
+        self.scrubber.set_comments([])
