@@ -7,7 +7,9 @@ After the project has been completed we will merge this branch into main.
 # Setup
 
 ### Production 
-To turn the program into a packaged executable for production. 
+To turn the program into a packaged executable for production the **pyinstaller** module is used. With pyinstaller run the command:
+```pyinstaller main.py```
+This will create 2 new directories and a `.spec` file. The `dist` directory contains all the files that need to be distributed including an execuable. This directory can be compressed and distributed or used to create an installer using an application like *InstallForge*. For more detailed information on pyinstaller options or creating an insatller with InstallForge see [Packaging PySide6 applications for Windows with PyInstaller & InstallForge](https://www.pythonguis.com/tutorials/packaging-pyside6-applications-windows-pyinstaller-installforge/).
 
 ### Development
 To run the program from command line for development, one need to set up a `venv` using the `requirements.txt` file at the root this repo.
@@ -17,8 +19,11 @@ Once the `venv` is running open a terminal is said `venv` and run `python ./main
 # Basic Usage
 For more detailed explanation of features please see the `docs\requirements.md`
 
-### Loading data.
-The data can be loaded using `File` button in the top right. From here you can select to load either the video or the wave forms. The video can be either a `.mp4` or `.mov`, the wave forms are loaded from HDF5 files whose extension is `.h5`. All of the selection is done through the host machines file explorer.
+### Loading Data
+The data can be loaded using `File` button in the top left. From here you can select to load a video, wave forms, or comments. The video can be either a `.mp4` or `.mov`, the wave forms are loaded from HDF5 files whose extension is `.h5`, and comments are imported from a json file with the extention `.json`. All of the selection is done through the host machines file explorer.
+
+### Saving Comments
+Comments are saved from the `File` dropdown. If the `Save` option is selected, comments are saved using the filepath of the imported comments and the old json file is overwritten. If there was no json file imported, the user will be prompted to choose a location to save the file. The `Save As` option will always prompt the user for a location to save the file.
 
 ### Video Player
 The video player is used like any other video player; containing a scrubber, pause/play button, and variable step sizes. Where this video player differs from traditional video players is you have the ability to trim off the beginning of the video, this feature is to enable the alignment of the wave form and video. It also allows the user to mark portions of the video for annotation which become highlighted in the timeline.
