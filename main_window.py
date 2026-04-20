@@ -32,6 +32,9 @@ class MainWindow(QMainWindow):
 
         self.comments = CommentWidget(self.time_keeper)
 
+        self.comments.commentsChanged.connect(self._sync_comments)
+        self.comments.jumpRequested.connect(self.video_pane.player.setPosition)
+
     def _create_layout(self):
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
@@ -70,6 +73,10 @@ class MainWindow(QMainWindow):
 
         if file_path:
             self.timeline.load_data(file_path)
+
+    def _sync_comments(self):
+        comments = self.comments.get_comments()
+        self.video_pane.set_comments(comments)
 
     # Menu Bar
     def _create_menu(self):

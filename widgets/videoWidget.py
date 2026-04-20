@@ -1,10 +1,11 @@
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QHBoxLayout, QComboBox, QLabel
 from PySide6.QtMultimedia import QMediaPlayer
 from PySide6.QtMultimediaWidgets import QVideoWidget
-from PySide6.QtCore import QUrl, QTimer, Qt
+from PySide6.QtCore import QUrl, QTimer, Qt, Signal
 from widgets.highlight_slider import HighlightSlider
 from timeKeeper import TimeKeeper
 from util.span_keeper import SpanKeeper
+from widgets.comment_marker_strip import CommentMarkerStrip
 
 class VideoWidget(QWidget):
     def __init__(self, span_keeper: SpanKeeper, time_keeper: TimeKeeper | None = None):
@@ -50,6 +51,10 @@ class VideoWidget(QWidget):
         button_layout.addStretch()
         layout.addLayout(button_layout)
 
+        #comment marker
+        self.comment_strip = CommentMarkerStrip()
+        layout.addWidget(self.comment_strip)
+
         self.play_button.clicked.connect(self.toggle_play_pause)
         self.player.playbackStateChanged.connect(self._update_button)
         self.add_mark_button.clicked.connect(self.add_mark)
@@ -58,6 +63,9 @@ class VideoWidget(QWidget):
         self.scrubber.sliderMoved.connect(self._on_scrubber_moved)
         self.scrubber.sliderPressed.connect(self._on_scrubber_pressed)
         self.speed_combo.currentTextChanged.connect(self._on_speed_changed)
+        self.player.positionChanged.connect(self.comment_strip.set_position)
+        self.player.durationChanged.connect(self.comment_strip.set_duration)
+
 
     def _on_speed_changed(self, text):
         speed = float(text.replace("x", ""))
@@ -111,3 +119,6 @@ class VideoWidget(QWidget):
 
     def _on_scrubber_pressed(self):
         self.player.setPosition(self.scrubber.value())
+
+    def set_comments(self, comments):
+        self.comment_strip.set_comments(comments)
