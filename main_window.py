@@ -29,7 +29,6 @@ class MainWindow(QMainWindow):
         self.video_pane = VideoWidget(SpanKeeper(), self.time_keeper)
         self.timeline = TimelineWidget()
         self.timeline.connect_signals(self.time_keeper)
-
         self.comments = CommentWidget(self.time_keeper)
 
     def _create_layout(self):
@@ -71,16 +70,37 @@ class MainWindow(QMainWindow):
         if file_path:
             self.timeline.load_data(file_path)
 
+    def _load_json(self):
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Open JSON File",
+            "",
+            "JSON Files (*json);;All Files (*)"
+        )
+        
+        if file_path:
+            self.comments.comment_keeper.load_json(file_path)
+
+    def _save_json_as(self):
+        self.comments.comment_keeper.save_json_comments()
+
     # Menu Bar
     def _create_menu(self):
         menu_bar = self.menuBar()
 
         file_menu = menu_bar.addMenu("File")
 
-        load_action = file_menu.addAction("Load Video")
-        load_action.triggered.connect(self._load_video)
-        load_action = file_menu.addAction("Load Data")
-        load_action.triggered.connect(self._load_data)
+        load_video_action = file_menu.addAction("Load Video")
+        load_video_action.triggered.connect(self._load_video)
+
+        load_data_action = file_menu.addAction("Load Data")
+        load_data_action.triggered.connect(self._load_data)
+
+        load_json_action = file_menu.addAction("Load JSON")
+        load_json_action.triggered.connect(self._load_json)
+
+        save_json_action = file_menu.addAction("Save JSON")
+        save_json_action.triggered.connect(self._load_json)
 
         file_menu.addSeparator()
 
