@@ -29,11 +29,8 @@ class MainWindow(QMainWindow):
         self.video_pane = VideoWidget(SpanKeeper(), self.time_keeper)
         self.timeline = TimelineWidget()
         self.timeline.connect_signals(self.time_keeper)
-        self.comments = CommentWidget(self.time_keeper)
 
-        self.comments.commentsChanged.connect(self._sync_comments)
-        self.comments.jumpRequested.connect(self.video_pane.player.setPosition)
-        #self.video_pane.player.positionChanged.connect(self.timeline.set_duration)
+        self.comments = CommentWidget(self.time_keeper)
 
     def _create_layout(self):
         central_widget = QWidget()
@@ -89,8 +86,3 @@ class MainWindow(QMainWindow):
 
         exit_action = file_menu.addAction("Exit")
         exit_action.triggered.connect(self.close)
-
-    def _sync_comments(self):
-        comments = self.comments.get_comments()
-        self.video_pane.set_comments(comments)
-        #self.timeline.set_comments(comments)

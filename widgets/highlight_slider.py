@@ -1,33 +1,16 @@
 from PySide6.QtWidgets import QSlider, QStyleOptionSlider, QStyle
-from PySide6.QtGui import QPainter, QColor, QPen
-from PySide6.QtCore import Qt, QPointF, QSize
+from PySide6.QtGui import QPainter, QColor
+from PySide6.QtCore import Qt
 from util.span_keeper import SpanKeeper
-from util.comment_keeper import CommentEntry
-from collections import defaultdict
-
-
 
 class HighlightSlider(QSlider):
     def __init__(self, orientation=Qt.Orientation.Horizontal, span_keeper: SpanKeeper | None = None):
         super().__init__(orientation)
         self._span_keeper = span_keeper
-        self._comments: list[CommentEntry] = []
 
     def set_span_keeper(self, span_keeper: SpanKeeper):
         self._span_keeper = span_keeper
         self.update()
-
-    def set_comments(self, comments: list[CommentEntry]):
-        self._comments = list(comments)
-        self.update()
-
-    def sizeHint(self):
-        s = super().sizeHint()
-        return QSize(s.width(), max(s.height(), 52))
-    
-    def minimumSizeHint(self):
-        s = super().minimumSizeHint()
-        return QSize(s.width(), max(s.height(), 52))
 
     def paintEvent(self, event):
         opt = QStyleOptionSlider()
@@ -43,7 +26,7 @@ class HighlightSlider(QSlider):
         )
         handle_half = handle_rect.width() // 2
 
-        groove_y = groove_rect.center().y() + 6
+        groove_y = groove_rect.center().y()
         groove_height = 4
         x_start = groove_rect.x() + handle_half
         x_end = groove_rect.right() - handle_half
@@ -89,32 +72,6 @@ class HighlightSlider(QSlider):
                 x2 = val_to_x(self.value())
                 painter.setBrush(QColor(255, 80, 80, 130))
                 painter.drawRect(x1, groove_y - bar_height // 2, x2 - x1, bar_height)
-
-        # Draw comment bubbles
-        if self._comments and self.maximum() > self.minimum():
-            buckets = defaultdict(list)
-
-            for comment in self._comments:
-                x = val_to_x(comment.start_time_ms)
-                buckets[x].append(comment)
-
-            for x, entries in buckets.items():
-                active = any(
-                    entry.start_time_ms <= self.value() <= entry.end_time_ms
-                    for entry in entries
-                )
-
-                radius = 8 if active else 5
-                bubble_y = max(radius + 3, groove_y - 10)
-
-                painter.setPen(QPen(QColor(200, 60, 60), 1.5))
-                painter.setBrush(
-                    QColor(255, 230, 230) if active else QColor(255, 255, 255)
-                )
-                painter.drawEllipse(QPointF(x, bubble_y), radius, radius)
-
-                if len(entries) > 1:
-                    painter.drawText(x - radius, bubble_y + 4, str(len(entries)))
 
         # Draw handle on top of everything
         opt2 = QStyleOptionSlider()
