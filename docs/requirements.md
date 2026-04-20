@@ -19,7 +19,8 @@
 3) [SpanKeeper](#d3-spankeeper)
 4) [Grapher](#d4-grapher)
 5) [HDF5 reader](#d5-hdf5-reader)
-6) [JSON reader/writer](#d6-json-readerwriter)
+6) [Comments Handler](#d6-comments-handler)
+7) [JSON reader/writer](#d7-json-readerwriter)
 ## E. Workflow
 1) [Annotation](#e1-annotation)
 2) [User Interface](#e2-ui)
@@ -150,7 +151,13 @@ The HDF5 Reader module is responsible for handling the dynamic loading of the of
 * After conversion it applies the vectors magnitude for plotting.
 * Allows each of the sensors to be chunked independently as to allow for alignment functionality
 
-## D6. JSON reader/writer
+## D6. Comments Handler
+The comments handler class is responsible for organizing and managing all the comments within the currently open project. It's created to seperate the functional elements from the UI. 
+* Comments are kept in a sorted list based on their start time. 
+* Each comment is also repesented in a visual list that is displayed to the user. This visual list is mirrored from the *primary list* and displays the start time, end time (if applicable), and a small string from the free-form comment. As changes are made to the *primary list* they are popageted to the visual list.
+* Invokes the JSON reader/writer to import and save the sorted list of comments
+
+## D7. JSON reader/writer
 The JSON Reader/Writer module is responsible for the persistent storage of annotation data so that user work can be saved, reloaded, and exported between sessions.
 * Used by the annotation system to import previously saved annotation files and export newly created annotations in JSON format
 * Reads and writes all required annotation fields, including start and stop timestamps, sidedness, RASS score, movement characteristic, reasoning, and free-form comments
