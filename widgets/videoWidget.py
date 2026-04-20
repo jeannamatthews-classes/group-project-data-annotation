@@ -1,5 +1,5 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QHBoxLayout, QComboBox, QLabel, QCheckBox
-from PySide6.QtMultimedia import QMediaPlayer
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QHBoxLayout, QComboBox, QLabel, QCheckBox, QLineEdit
+from PySide6.QtMultimedia import QMediaPlayer, QMediaMetaData
 from PySide6.QtMultimediaWidgets import QVideoWidget
 from PySide6.QtCore import QUrl, QTimer, Qt
 from widgets.highlight_slider import HighlightSlider
@@ -91,6 +91,9 @@ class VideoWidget(QWidget):
         self.get_trim_button = QPushButton("Get Trim") 
         self.get_trim_button.setFixedWidth(80)
         left_trim.addWidget(self.get_trim_button)
+        self.trim_box = QLineEdit("0")
+        self.trim_box.setFixedWidth(80)
+        left_trim.addWidget(self.trim_box)
         left_trim.addStretch()
 
         # Center
@@ -120,7 +123,7 @@ class VideoWidget(QWidget):
         self.add_mark_button.clicked.connect(self.add_mark)
         self.step_back_button.clicked.connect(self.step_backward)
         self.step_forward_button.clicked.connect(self.step_forward)
-        self.set_trim_button.clicked.connect(self.set_trim)
+        self.set_trim_button.clicked.connect(lambda: self.set_trim())
         self.clear_trim_button.clicked.connect(self.clear_trim)
         self.get_trim_button.clicked.connect(self.get_trim)
 
@@ -132,6 +135,10 @@ class VideoWidget(QWidget):
         self.speed_combo.currentTextChanged.connect(self._on_speed_changed)
         self.lock_trim_cbox.toggled.connect(lambda checked: self.set_trim_button.setEnabled(not checked))
         self.lock_trim_cbox.toggled.connect(lambda checked: self.clear_trim_button.setEnabled(not checked))
+        self.lock_trim_cbox.toggled.connect(lambda checked: self.trim_box.setEnabled(not checked))
+        self.trim_box.editingFinished.connect(
+            lambda: self.set_trim(int(self.trim_box.text()))
+        )
 
         self._controls = [
             self.set_trim_button,
@@ -144,6 +151,7 @@ class VideoWidget(QWidget):
             self.speed_combo,
             self.step_combo,
             self.lock_trim_cbox,
+            self.trim_box
         ]
 
         for control in self._controls:
@@ -193,8 +201,13 @@ class VideoWidget(QWidget):
         if self.trim_start_ms < self.player.position() + step < self.player.duration():
             self.player.setPosition(self.player.position() + step)
 
-    def set_trim(self):
-        self.trim_start_ms = self.player.position()
+    def set_trim(self, set_to: int | None = None):
+        if set_to is None:
+            self.trim_start_ms = self.player.position()
+        else:
+            self.trim_start_ms = set_to
+
+        self.time_keeper.set_trim(self.trim_start_ms)
         timecode =  self._fmt_timecode(self._ms_to_timecode(self.trim_start_ms))
         self.trim_label.setText(timecode)
         self.scrubber.setRange(self.trim_start_ms, self.player.duration())
@@ -203,6 +216,8 @@ class VideoWidget(QWidget):
     def clear_trim(self):
         """Remove the trim-in point and restore full range."""
         self.trim_start_ms = 0
+        self.time_keeper.set_trim(self.trim_start_ms)
+        self.trim_box.setText("0")
         self.trim_label.setText(f"No trim set")
         self.scrubber.setRange(0, self.player.duration())
 
@@ -214,20 +229,14 @@ class VideoWidget(QWidget):
         self.player.setSource(QUrl.fromLocalFile(file_path))
         QTimer.singleShot(0, self.player.pause)
 
-        import cv2
-        cap = cv2.VideoCapture(file_path)
-        self.fps = cap.get(cv2.CAP_PROP_FPS)
-        cap.release()
-
-        self.player.mediaStatusChanged.connect(self._on_media_loaded)
+        self.player.mediaStatusChanged.connect(self._on_media_loaded, Qt.SingleShotConnection)
 
         for control in self._controls:
             control.setEnabled(True)
 
     def _on_media_loaded(self, status):
         if status == QMediaPlayer.MediaStatus.LoadedMedia:
-            self.player.mediaStatusChanged.disconnect(self._on_media_loaded)
-
+            self.fps = self.player.metaData().value(QMediaMetaData.VideoFrameRate)
             self.total_duration = self._ms_to_timecode(self.player.duration())
             total_duration_time_code = self._fmt_timecode(self.total_duration)
             self.time_label.setText(f"00:00:00:00 / {total_duration_time_code}")
