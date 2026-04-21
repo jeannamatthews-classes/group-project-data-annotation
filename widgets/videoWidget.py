@@ -8,6 +8,7 @@ from util.span_keeper import SpanKeeper
 from widgets.comment_marker_strip import CommentMarkerStrip
 
 class VideoWidget(QWidget):
+    commentClicked = Signal(int, int)
     def __init__(self, span_keeper: SpanKeeper, time_keeper: TimeKeeper | None = None):
         super().__init__()
         self.time_keeper = time_keeper
@@ -65,6 +66,7 @@ class VideoWidget(QWidget):
         self.speed_combo.currentTextChanged.connect(self._on_speed_changed)
         self.player.positionChanged.connect(self.comment_strip.set_position)
         self.player.durationChanged.connect(self.comment_strip.set_duration)
+        self.comment_strip.markerClicked.connect(self._on_marker_clicked)
 
 
     def _on_speed_changed(self, text):
@@ -122,3 +124,7 @@ class VideoWidget(QWidget):
 
     def set_comments(self, comments):
         self.comment_strip.set_comments(comments)
+
+    def _on_marker_clicked(self, index: int, timestamp_ms: int):
+        self.player.setPosition(timestamp_ms)
+        self.commentClicked.emit(index, timestamp_ms)

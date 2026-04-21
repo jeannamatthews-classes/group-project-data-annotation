@@ -6,18 +6,17 @@ from PySide6.QtWidgets import QWidget, QSizePolicy
 
 
 class CommentMarkerStrip(QWidget):
-    markerClicked = Signal(int, int)  # comment index, timestamp ms
+    markerClicked = Signal(int, int)  # index, timestamp_ms
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self._comments = []
         self._position_ms = 0
         self._duration_ms = 1
+        self._marker_positions = []
 
         self.setFixedHeight(18)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-
-        self._marker_positions = []  # list of tuples: (x, index)
 
     def set_comments(self, comments):
         self._comments = list(comments)
@@ -67,7 +66,6 @@ class CommentMarkerStrip(QWidget):
             )
             painter.drawEllipse(QPointF(x, y), radius, radius)
 
-            # store first entry in the bucket for click handling
             first_index, first_comment = entries[0]
             self._marker_positions.append((x, first_index))
 
@@ -76,9 +74,6 @@ class CommentMarkerStrip(QWidget):
 
     def mousePressEvent(self, event):
         if event.button() != Qt.MouseButton.LeftButton:
-            return
-
-        if not self._comments:
             return
 
         click_x = event.position().x()

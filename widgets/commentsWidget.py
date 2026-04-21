@@ -1,9 +1,8 @@
-from typing import List
-
+from typing import Optional, List
 import qtawesome as qta
 
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QAction
+from PySide6.QtCore import Qt, Signal, QRegularExpression
+from PySide6.QtGui import QAction, QRegularExpressionValidator
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -22,13 +21,12 @@ from timeKeeper import TimeKeeper
 from util.comment_keeper import CommentKeeper, CommentEntry, format_ms, to_ms
 
 MOVEMENTS = ["", "Up", "Down", "Left", "Right"]
-RASS = ["", "-5", "-4", "-3", "-2", "-1", "0", "1", "2", "3", "4"]
-
+RASS = ['', '-5', '-4', '-3', '-2', '-1', '0', '1', '2', '3', '4']
 
 
 class CommentWidget(QWidget):
-    jumpRequested = Signal(int)
     commentsChanged = Signal()
+    jumpRequested = Signal(int)
 
     def __init__(self, timekeeper: TimeKeeper):
         super().__init__()
@@ -38,19 +36,22 @@ class CommentWidget(QWidget):
         self.comment_list = QListWidget()
         self.comment_keeper = CommentKeeper(self.comment_list)
 
+        self.time_rx = QRegularExpression(r"^(\d+:)?([0-5]\d):([0-5]\d)$")
+
         self._create_ui()
 
         self.time_keeper.positionChanged.connect(self._on_position_changed)
         self.comment_keeper.selected_comment_changed.connect(self._on_comment_changed)
+
+        # important missing wiring
         self.comment_list.currentRowChanged.connect(self.comment_keeper.select_comment)
         self.comment_list.itemDoubleClicked.connect(self._jump_to_comment)
-
-        self.comment_keeper.select_empty_comment()
+        self.comment_list.itemClicked.connect(self._jump_to_comment)
 
     def _create_ui(self):
         layout = QVBoxLayout(self)
 
-        self.title = QLabel("New Comment")
+        self.title = QLabel("Add Comment")
         self.title.setAlignment(Qt.AlignCenter)
         self.title.setStyleSheet("background-color: #222; color: white; padding: 6px;")
         layout.addWidget(self.title)
@@ -58,44 +59,50 @@ class CommentWidget(QWidget):
         self.timestamp_label = QLabel("Current video time: 00:00")
         layout.addWidget(self.timestamp_label)
 
-        icon = qta.icon("ei.time", color="gray")
+        icon = qta.icon('ei.time', color='gray')
+
         self.start_time_action = QAction(icon, "Use Current Time", self)
         self.end_time_action = QAction(icon, "Use Current Time", self)
 
-        # Start time
         start_time_row = QHBoxLayout()
         start_time_row.addWidget(QLabel("Start Time"))
         self.start_time_input = QLineEdit()
-        self.start_time_input.setPlaceholderText("mm:ss or hh:mm:ss")
+        self.start_time_input.setValidator(
+            QRegularExpressionValidator(self.time_rx, self.start_time_input)
+        )
+        self.start_time_input.editingFinished.connect(self._user_fill_starttime)
         self.start_time_action.triggered.connect(self._start_use_current_time)
         self.start_time_input.addAction(
             self.start_time_action,
-            QLineEdit.ActionPosition.TrailingPosition,
+            QLineEdit.ActionPosition.TrailingPosition
         )
         start_time_row.addWidget(self.start_time_input)
+        self.start_time_input.setMaximumWidth(200)
         layout.addLayout(start_time_row)
 
-        # End time
         end_time_row = QHBoxLayout()
         end_time_row.addWidget(QLabel("End Time"))
         self.end_time_input = QLineEdit()
-        self.end_time_input.setPlaceholderText("mm:ss or hh:mm:ss")
+        self.end_time_input.setValidator(
+            QRegularExpressionValidator(self.time_rx, self.end_time_input)
+        )
+        self.end_time_input.editingFinished.connect(self._user_fill_endtime)
         self.end_time_action.triggered.connect(self._end_use_current_time)
         self.end_time_input.addAction(
             self.end_time_action,
-            QLineEdit.ActionPosition.TrailingPosition,
+            QLineEdit.ActionPosition.TrailingPosition
         )
         end_time_row.addWidget(self.end_time_input)
+        self.end_time_input.setMaximumWidth(200)
         layout.addLayout(end_time_row)
 
-        # Sidedness
         side_row = QHBoxLayout()
         side_row.addWidget(QLabel("Sidedness:"))
         self.side_input = QLineEdit()
         side_row.addWidget(self.side_input)
+        self.side_input.setMaximumWidth(200)
         layout.addLayout(side_row)
 
-        # RASS
         rass_row = QHBoxLayout()
         rass_row.addWidget(QLabel("RASS:"))
         self.rass_box = QComboBox()
@@ -103,7 +110,6 @@ class CommentWidget(QWidget):
         rass_row.addWidget(self.rass_box)
         layout.addLayout(rass_row)
 
-        # Movement
         movement_row = QHBoxLayout()
         movement_row.addWidget(QLabel("Movement:"))
         self.movement_box = QComboBox()
@@ -111,110 +117,121 @@ class CommentWidget(QWidget):
         movement_row.addWidget(self.movement_box)
         layout.addLayout(movement_row)
 
-        # Comment text
         layout.addWidget(QLabel("Comment text:"))
         self.comment_input = QTextEdit()
         self.comment_input.setPlaceholderText("Enter your annotation here...")
         self.comment_input.setFixedHeight(120)
         layout.addWidget(self.comment_input)
 
-        # Buttons
         button_row = QHBoxLayout()
-        self.save_button = QPushButton("Save Comment")
-        self.new_button = QPushButton("New Comment")
-        self.delete_button = QPushButton("Delete Comment")
+        self.save_button = QPushButton("Save")
+        self.save_button.setMinimumSize(100, 25)
+        self.new_button = QPushButton("New")
+        self.new_button.setMinimumSize(100, 25)
+        self.delete_button = QPushButton("Delete")
+        self.delete_button.setMinimumSize(100, 25)
 
         button_row.addWidget(self.save_button)
         button_row.addWidget(self.new_button)
         button_row.addWidget(self.delete_button)
         layout.addLayout(button_row)
 
-        self.save_button.clicked.connect(self.save_current_comment)
-        self.new_button.clicked.connect(self.close_comment)
-        self.delete_button.clicked.connect(self.delete_current_comment)
+        self.save_button.clicked.connect(self._save_comment)
+        self.new_button.clicked.connect(self._select_empty)
+        self.delete_button.clicked.connect(self._delete_comment)
+        self.comment_input.textChanged.connect(self._update_comment)
 
-        # Saved comments
         layout.addWidget(QLabel("Saved comments:"))
         layout.addWidget(self.comment_list, stretch=1)
 
-    def _on_comment_changed(self, index: int):
+    def _on_comment_changed(self, index):
         if index == -1:
             self.title.setText("New Comment")
-            self.save_button.setText("Save Comment")
+            self.save_button.setText("Add")
             self.clear_inputs()
             return
 
-        entry = self.comment_keeper.selected
+        self.start_time_input.setText(format_ms(self.comment_keeper.selected.start_time_ms))
+        self.end_time_input.setText(format_ms(self.comment_keeper.selected.end_time_ms))
+        self.side_input.setText(self.comment_keeper.selected.side)
 
-        self.start_time_input.setText(format_ms(entry.start_time_ms))
-        self.end_time_input.setText(format_ms(entry.end_time_ms))
-        self.side_input.setText(entry.side)
-        self._set_combo_text(self.rass_box, entry.RASS)
-        self._set_combo_text(self.movement_box, entry.movement)
-        self.comment_input.setPlainText(entry.comment)
+        rass_index = self.rass_box.findText(self.comment_keeper.selected.RASS)
+        if rass_index >= 0:
+            self.rass_box.setCurrentIndex(rass_index)
+        else:
+            self.rass_box.setCurrentIndex(0)
+
+        movement_index = self.movement_box.findText(self.comment_keeper.selected.movement)
+        if movement_index >= 0:
+            self.movement_box.setCurrentIndex(movement_index)
+        else:
+            self.movement_box.setCurrentIndex(0)
+
+        self.comment_input.setPlainText(self.comment_keeper.selected.comment)
 
         self.title.setText("Modify Comment")
-        self.save_button.setText("Update Comment")
+        self.save_button.setText("Update")
 
-    def _on_position_changed(self, position: int):
-        self.current_timestamp_ms = position
-        self.timestamp_label.setText(
-            f"Current video time: {format_ms(self.current_timestamp_ms)}"
-        )
-        self.comment_keeper.sync_list(position)
+    def _select_empty(self):
+        self.comment_keeper.select_comment(-1)
 
-    def _start_use_current_time(self):
-        self.start_time_input.setText(format_ms(self.current_timestamp_ms))
-
-    def _end_use_current_time(self):
-        self.end_time_input.setText(format_ms(self.current_timestamp_ms))
-
-    def _comment_from_inputs(self) -> CommentEntry:
-        comment_text = self.comment_input.toPlainText().strip()
-        if not comment_text:
-            raise ValueError("Please enter comment text.")
-
+    def _save_comment(self):
         start_text = self.start_time_input.text().strip()
         end_text = self.end_time_input.text().strip()
 
-        start_ms = to_ms(start_text) if start_text else self.current_timestamp_ms
-        end_ms = to_ms(end_text) if end_text else start_ms
+        if start_text:
+            self.comment_keeper.working.start_time_ms = to_ms(start_text)
+        else:
+            self.comment_keeper.working.start_time_ms = self.current_timestamp_ms
+            self.start_time_input.setText(format_ms(self.current_timestamp_ms))
 
-        if end_ms < start_ms:
-            start_ms, end_ms = end_ms, start_ms
+        if end_text:
+            self.comment_keeper.working.end_time_ms = to_ms(end_text)
+        else:
+            self.comment_keeper.working.end_time_ms = self.comment_keeper.working.start_time_ms
+            self.end_time_input.setText(format_ms(self.comment_keeper.working.end_time_ms))
 
-        previous_created = self.comment_keeper.selected.datetime_created
+        self.comment_keeper.working.side = self.side_input.text().strip()
+        self.comment_keeper.working.RASS = self.rass_box.currentText()
+        self.comment_keeper.working.movement = self.movement_box.currentText()
+        self.comment_keeper.working.comment = self.comment_input.toPlainText()
 
-        return CommentEntry(
-            start_time_ms=start_ms,
-            end_time_ms=end_ms,
-            side=self.side_input.text().strip(),
-            RASS=self.rass_box.currentText().strip(),
-            movement=self.movement_box.currentText().strip(),
-            comment=comment_text,
-            datetime_created=previous_created,
-        )
-
-    def save_current_comment(self):
-        try:
-            entry = self._comment_from_inputs()
-        except ValueError as e:
-            QMessageBox.warning(self, "Invalid Input", str(e))
-            return
-
-        self.comment_keeper.save_comment(entry)
+        self.comment_keeper.save_comment()
         self.commentsChanged.emit()
 
-    def delete_current_comment(self):
-        if self.comment_keeper.selected_index == -1:
-            QMessageBox.information(self, "No Comment Selected", "Select a saved comment to delete.")
-            return
-
+    def _delete_comment(self):
         self.comment_keeper.delete_current_comment()
         self.commentsChanged.emit()
 
+    def _update_comment(self):
+        self.comment_keeper.working.comment = self.comment_input.toPlainText()
+
+    def _on_position_changed(self, position):
+        self.current_timestamp_ms = position
+        self.timestamp_label.setText(f"Current video time: {format_ms(self.current_timestamp_ms)}")
+        self.comment_keeper.sync_list(position)
+
+    def _start_use_current_time(self):
+        self.comment_keeper.working.start_time_ms = self.current_timestamp_ms
+        self.start_time_input.setText(format_ms(self.current_timestamp_ms))
+
+    def _end_use_current_time(self):
+        self.comment_keeper.working.end_time_ms = self.current_timestamp_ms
+        self.end_time_input.setText(format_ms(self.current_timestamp_ms))
+
+    def _user_fill_starttime(self):
+        text = self.start_time_input.text().strip()
+        if text:
+            self.comment_keeper.working.start_time_ms = to_ms(text)
+
+    def _user_fill_endtime(self):
+        text = self.end_time_input.text().strip()
+        if text:
+            self.comment_keeper.working.end_time_ms = to_ms(text)
+
     def _jump_to_comment(self, item: QListWidgetItem):
-        timestamp_ms = item.data(Qt.ItemDataRole.UserRole)
+        timestamp_ms = item.data(Qt.UserRole)
+        print("jump timestamp:", timestamp_ms)
         if isinstance(timestamp_ms, int):
             self.jumpRequested.emit(timestamp_ms)
 
@@ -226,16 +243,14 @@ class CommentWidget(QWidget):
         self.movement_box.setCurrentIndex(0)
         self.comment_input.clear()
 
-    def close_comment(self):
-        self.comment_list.clearSelection()
-        self.comment_keeper.select_empty_comment()
-
-    def _set_combo_text(self, combo: QComboBox, value: str):
-        index = combo.findText(value)
-        if index >= 0:
-            combo.setCurrentIndex(index)
-        else:
-            combo.setCurrentIndex(0)
-
-    def get_comments(self) -> List[CommentEntry]:
+    def get_comments(self):
         return self.comment_keeper.get_comments()
+    
+    def select_comment_by_index(self, index: int):
+        if index < 0 or index >= self.comment_list.count():
+            return
+
+        self.comment_list.setCurrentRow(index)
+        item = self.comment_list.item(index)
+        if item is not None:
+            self.comment_list.scrollToItem(item)

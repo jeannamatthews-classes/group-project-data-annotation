@@ -29,11 +29,18 @@ class MainWindow(QMainWindow):
         self.video_pane = VideoWidget(SpanKeeper(), self.time_keeper)
         self.timeline = TimelineWidget()
         self.timeline.connect_signals(self.time_keeper)
-
         self.comments = CommentWidget(self.time_keeper)
 
         self.comments.commentsChanged.connect(self._sync_comments)
         self.comments.jumpRequested.connect(self.video_pane.player.setPosition)
+        self.video_pane.commentClicked.connect(self._on_video_comment_clicked)
+
+    def _sync_comments(self):
+        comments = self.comments.get_comments()
+        self.video_pane.set_comments(comments)
+
+    def _on_video_comment_clicked(self, index: int, timestamp_ms: int):
+        self.comments.select_comment_by_index(index)
 
     def _create_layout(self):
         central_widget = QWidget()
@@ -74,9 +81,19 @@ class MainWindow(QMainWindow):
         if file_path:
             self.timeline.load_data(file_path)
 
-    def _sync_comments(self):
-        comments = self.comments.get_comments()
-        self.video_pane.set_comments(comments)
+    def _load_json(self):
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Open JSON File",
+            "",
+            "JSON Files (*json);;All Files (*)"
+        )
+        
+        if file_path:
+            self.comments.comment_keeper.load_json(file_path)
+
+    def _save_json_as(self):
+        self.comments.comment_keeper.save_json_comments()
 
     # Menu Bar
     def _create_menu(self):
@@ -84,10 +101,17 @@ class MainWindow(QMainWindow):
 
         file_menu = menu_bar.addMenu("File")
 
-        load_action = file_menu.addAction("Load Video")
-        load_action.triggered.connect(self._load_video)
-        load_action = file_menu.addAction("Load Data")
-        load_action.triggered.connect(self._load_data)
+        load_video_action = file_menu.addAction("Load Video")
+        load_video_action.triggered.connect(self._load_video)
+
+        load_data_action = file_menu.addAction("Load Data")
+        load_data_action.triggered.connect(self._load_data)
+
+        load_json_action = file_menu.addAction("Load JSON")
+        load_json_action.triggered.connect(self._load_json)
+
+        save_json_action = file_menu.addAction("Save JSON")
+        save_json_action.triggered.connect(self._load_json)
 
         file_menu.addSeparator()
 
