@@ -2,6 +2,7 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QHBoxLayout, QC
 from PySide6.QtMultimedia import QMediaPlayer, QMediaMetaData
 from PySide6.QtMultimediaWidgets import QVideoWidget
 from PySide6.QtCore import QUrl, QTimer, Qt, Signal
+from PySide6.QtGui import QIntValidator
 from widgets.highlight_slider import HighlightSlider
 from timeKeeper import TimeKeeper
 from util.span_keeper import SpanKeeper
@@ -97,6 +98,7 @@ class VideoWidget(QWidget):
         self.get_trim_button.setFixedWidth(80)
         left_trim.addWidget(self.get_trim_button)
         self.trim_box = QLineEdit("0")
+        self.trim_box.setValidator(QIntValidator(bottom=0))
         self.trim_box.setFixedWidth(80)
         left_trim.addWidget(self.trim_box)
         left_trim.addStretch()
@@ -200,14 +202,12 @@ class VideoWidget(QWidget):
         return "{:02d}:{:02d}:{:02d}:{:02d}".format(*timecode)
 
     def step_backward(self):
-        step = self._calculate_step() 
-        if self.trim_start_ms < self.player.position() - step < self.player.duration():
-            self.player.setPosition(self.player.position() - step)    
+        step = self._calculate_step()
+        self.player.setPosition(max(self.trim_start_ms, self.player.position() - step))
     
     def step_forward(self):
         step = self._calculate_step() 
-        if self.trim_start_ms < self.player.position() + step < self.player.duration():
-            self.player.setPosition(self.player.position() + step)
+        self.player.setPosition(min(self.player.position() + step, self.player.duration()))
 
     def set_trim(self, set_to: int | None = None):
         if set_to is None:
@@ -219,7 +219,8 @@ class VideoWidget(QWidget):
         timecode =  self._fmt_timecode(self._ms_to_timecode(self.trim_start_ms))
         self.trim_label.setText(timecode)
         self.scrubber.setRange(self.trim_start_ms, self.player.duration())
-        self.player.setPosition(self.trim_start_ms)
+        if self.player.position() < self.trim_start_ms:
+            self.player.setPosition(self.trim_start_ms)
 
     def clear_trim(self):
         """Remove the trim-in point and restore full range."""
@@ -244,7 +245,10 @@ class VideoWidget(QWidget):
 
     def _on_media_loaded(self, status):
         if status == QMediaPlayer.MediaStatus.LoadedMedia:
-            self.fps = self.player.metaData().value(QMediaMetaData.VideoFrameRate)
+            metadata = self.player.metaData()
+            self.fps = metadata.value(QMediaMetaData.VideoFrameRate)
+            self.trim_box.validator().setTop(metadata.value(QMediaMetaData.Duration))
+
             self.total_duration = self._ms_to_timecode(self.player.duration())
             total_duration_time_code = self._fmt_timecode(self.total_duration)
             self.time_label.setText(f"00:00:00:00 / {total_duration_time_code}")
@@ -282,7 +286,7 @@ class VideoWidget(QWidget):
         # Block signals to prevent seek loop while updating slider position
         current_timecode =  self._fmt_timecode(self._ms_to_timecode(position))
         total_duration_time_code = self._fmt_timecode(self.total_duration)
-        self.time_label.setText(f"{current_timecode}/ {total_duration_time_code}")
+        self.time_label.setText(f"{current_timecode} / {total_duration_time_code}")
         self.scrubber.blockSignals(True)
         self.scrubber.setValue(position)
         self.scrubber.blockSignals(False)
