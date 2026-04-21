@@ -231,7 +231,6 @@ class CommentWidget(QWidget):
 
     def _jump_to_comment(self, item: QListWidgetItem):
         timestamp_ms = item.data(Qt.UserRole)
-        print("jump timestamp:", timestamp_ms)
         if isinstance(timestamp_ms, int):
             self.jumpRequested.emit(timestamp_ms)
 

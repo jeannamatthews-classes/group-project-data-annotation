@@ -27,6 +27,9 @@ class VideoWidget(QWidget):
         self.time_keeper.set_player(self.player)
         self.player.setVideoOutput(self.video_widget)
 
+        self.comment_strip = CommentMarkerStrip()
+        layout.addWidget(self.comment_strip)
+
         scrubber_layout = QHBoxLayout()
         self.scrubber = HighlightSlider(Qt.Orientation.Horizontal, self.span_keeper)
         self.scrubber.setRange(0, 0)
@@ -132,6 +135,9 @@ class VideoWidget(QWidget):
         self.player.playbackStateChanged.connect(self._update_button)
         self.player.positionChanged.connect(self._on_position_changed)
         self.player.durationChanged.connect(self._on_duration_changed)
+        self.player.positionChanged.connect(self.comment_strip.set_position)
+        self.player.durationChanged.connect(self.comment_strip.set_duration)
+        self.comment_strip.markerClicked.connect(self._on_marker_clicked)
         self.scrubber.sliderMoved.connect(self._on_scrubber_moved)
         self.scrubber.sliderPressed.connect(self._on_scrubber_pressed)
         self.speed_combo.currentTextChanged.connect(self._on_speed_changed)
@@ -291,7 +297,11 @@ class VideoWidget(QWidget):
         self.player.setPosition(self.scrubber.value())
 
     def set_comments(self, comments):
-        self.comment_strip.set_comments(comments)
+        if hasattr(self, "comment_strip"):
+            self.comment_strip.set_comments(comments)
+
+        if hasattr(self, "scrubber") and hasattr(self.scrubber, "set_comments"):
+            self.scrubber.set_comments([])
 
     def _on_marker_clicked(self, index: int, timestamp_ms: int):
         self.player.setPosition(timestamp_ms)

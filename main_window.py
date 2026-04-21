@@ -35,6 +35,7 @@ class MainWindow(QMainWindow):
         self.comments.jumpRequested.connect(self.video_pane.player.setPosition)
         self.video_pane.commentClicked.connect(self._on_video_comment_clicked)
 
+
     def _sync_comments(self):
         comments = self.comments.get_comments()
         self.video_pane.set_comments(comments)
