@@ -84,9 +84,10 @@ class CommentKeeper(QWidget):
     def __init__(self, list_widget: QListWidget):
         # Call QObject initPIP
         super().__init__()
+        self.json_path = None
 
         self.list_widget = list_widget
-        self.list_widget.currentRowChanged.connect(self.select_comment)
+        self.list_widget.itemClicked.connect(self._select_list_item)
 
         # Create List for comments
         self.comments: List[CommentEntry] = []
@@ -94,13 +95,17 @@ class CommentKeeper(QWidget):
         # Select Empty comment by default
         self.select_empty_comment()      
 
+    def _set_selected_index(self, index: int):
+        self.selected_index = index
+        self.selected_comment_changed.emit(self.selected_index)
+
     def select_empty_comment(self):
         self.selected = CommentEntry()
         self.working = replace(self.selected)
         
         # Keeps track of the current selected index (-1 means new comment)
-        self.selected_index = -1
         self.list_widget.clearSelection()
+        self._set_selected_index(-1)
 
     def select_comment(self, index: int):
         if self.selected_index == index:
@@ -108,17 +113,15 @@ class CommentKeeper(QWidget):
 
         if not self.working == self.selected:
             # Unsaved Changes Exist - Ask to save
-            if self._save_popup_ui("Do you want to save your comment changes?"): self.save_comment(self.working)
+            if save_popup_ui("Do you want to save your comment changes?"): self.save_comment()
 
         # Switch Comments
         if index == -1: self.select_empty_comment()
         else:
             self.selected = self.comments[index]
-            self.selected_index = index
             self.working = replace(self.selected)
             self.list_widget.setCurrentRow(index)
-
-        self.selected_comment_changed.emit(self.selected_index)
+            self._set_selected_index(index)
 
     def add_comment(self):
         self.working.datetime_created = str(datetime.datetime.now())
@@ -126,8 +129,7 @@ class CommentKeeper(QWidget):
         self.comments.insert(index, self.working)
         self.selected = self.comments[index]
         self._insert_comment_to_widget(index)
-        self.selected_index = index
-        self.selected_comment_changed.emit(self.selected_index)
+        self._set_selected_index(index)
         
 
     def save_comment(self):
@@ -149,6 +151,8 @@ class CommentKeeper(QWidget):
 
         self.select_empty_comment()
 
+    def _select_list_item(self, item):
+        self.select_comment(self.list_widget.row(item))
     
     def _insert_comment_to_widget(self, index: int):
         self.list_widget.insertItem(index, _format_comment(self.working))
@@ -183,21 +187,25 @@ class CommentKeeper(QWidget):
         except ValueError as e: QMessageBox.warning(self, f"{e}", "Please enter Valid Time")
 
     """ Ingests comments from JSON into object """
-    def import_json_comments(self, path):
-        self.json_path = path
+    def import_json_comments(self):
+        self.json_path, _ = QFileDialog.getOpenFileName(
+                self,
+                "Open JSON File",
+                "",
+                "JSON Files (*json);;All Files (*)"
+            )
 
-        self.comments = json.read_list(CommentEntry, path)
+        self.comments = json.read_list(CommentEntry, self.json_path)
         self.list_widget.setUpdatesEnabled(False)
         self.list_widget.clear()
         
         for entry in self.comments:
-            self._append_comment_to_widget(entry)
+            self.list_widget.addItem(_format_comment(entry))
             
         self.list_widget.setUpdatesEnabled(True)
 
-    def save_json_comments(self):
-
-        if not self.json_path and not self.comments: 
+    def save_json_comments(self, save_as:bool = False):
+        if save_as or self.json_path is None:
             self.json_path, _ = QFileDialog.getSaveFileName(
                 self,
                 "Save JSON File",

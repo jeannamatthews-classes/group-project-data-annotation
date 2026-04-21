@@ -65,6 +65,8 @@ def _coerce(tp, value):
 
 def write(obj, path):
     path = Path(path)
+    if path.suffix != ".json":
+        path = path.with_suffix(".json")
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8") as f:
         json.dump(obj, f, cls=DataclassEncoder, ensure_ascii=False)

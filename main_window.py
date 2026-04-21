@@ -70,20 +70,6 @@ class MainWindow(QMainWindow):
         if file_path:
             self.timeline.load_data(file_path)
 
-    def _load_json(self):
-        file_path, _ = QFileDialog.getOpenFileName(
-            self,
-            "Open JSON File",
-            "",
-            "JSON Files (*json);;All Files (*)"
-        )
-        
-        if file_path:
-            self.comments.comment_keeper.load_json(file_path)
-
-    def _save_json_as(self):
-        self.comments.comment_keeper.save_json_comments()
-
     # Menu Bar
     def _create_menu(self):
         menu_bar = self.menuBar()
@@ -97,10 +83,15 @@ class MainWindow(QMainWindow):
         load_data_action.triggered.connect(self._load_data)
 
         load_json_action = file_menu.addAction("Load JSON")
-        load_json_action.triggered.connect(self._load_json)
+        load_json_action.triggered.connect(self.comments.comment_keeper.import_json_comments)
 
         save_json_action = file_menu.addAction("Save JSON")
-        save_json_action.triggered.connect(self._load_json)
+        save_json_action.triggered.connect(self.comments.comment_keeper.save_json_comments)
+
+        save_json_action = file_menu.addAction("Save JSON As")
+        save_json_action.triggered.connect(
+            lambda: self.comments.comment_keeper.save_json_comments(True)
+        )
 
         file_menu.addSeparator()
 
