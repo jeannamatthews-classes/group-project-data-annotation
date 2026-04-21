@@ -15,7 +15,7 @@ from util.span_keeper import SpanKeeper
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        
+
         self.setWindowTitle("Video Editor Layout")
         self.resize(1200, 800)
 
@@ -24,11 +24,11 @@ class MainWindow(QMainWindow):
         self._create_widgets()
         self._create_layout()
         self._create_menu()
-        
+
     def _create_widgets(self):
         self.video_pane = VideoWidget(SpanKeeper(), self.time_keeper)
-        self.timeline = TimelineWidget()
-        self.timeline.connect_signals(self.time_keeper)
+
+        self.timeline = TimelineWidget(self.time_keeper)
         self.comments = CommentWidget(self.time_keeper)
 
         self.comments.commentsChanged.connect(self._sync_comments)
@@ -51,7 +51,7 @@ class MainWindow(QMainWindow):
 
         # LEFT vertical layout (Video + Timeline)
         left_layout = QVBoxLayout()
-        left_layout.addWidget(self.video_pane, stretch=3)
+        left_layout.addWidget(self.video_pane, stretch=2)
         left_layout.addWidget(self.timeline, stretch=1)
 
         # Add layouts to main layout
@@ -75,25 +75,11 @@ class MainWindow(QMainWindow):
             self,
             "Open Sensor Data File",
             "",
-            "CSV Files (*.csv);;All Files (*)"
+            "HDF5 Files (*.hdf *.h5 *.hdf5 *.he5);;All Files (*)"
         )
 
         if file_path:
             self.timeline.load_data(file_path)
-
-    def _load_json(self):
-        file_path, _ = QFileDialog.getOpenFileName(
-            self,
-            "Open JSON File",
-            "",
-            "JSON Files (*json);;All Files (*)"
-        )
-        
-        if file_path:
-            self.comments.comment_keeper.load_json(file_path)
-
-    def _save_json_as(self):
-        self.comments.comment_keeper.save_json_comments()
 
     # Menu Bar
     def _create_menu(self):
@@ -108,10 +94,15 @@ class MainWindow(QMainWindow):
         load_data_action.triggered.connect(self._load_data)
 
         load_json_action = file_menu.addAction("Load JSON")
-        load_json_action.triggered.connect(self._load_json)
+        load_json_action.triggered.connect(self.comments.comment_keeper.import_json_comments)
 
         save_json_action = file_menu.addAction("Save JSON")
-        save_json_action.triggered.connect(self._load_json)
+        save_json_action.triggered.connect(self.comments.comment_keeper.save_json_comments)
+
+        save_json_action = file_menu.addAction("Save JSON As")
+        save_json_action.triggered.connect(
+            lambda: self.comments.comment_keeper.save_json_comments(True)
+        )
 
         file_menu.addSeparator()
 

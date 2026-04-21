@@ -1,3 +1,5 @@
 __pycache__/
 widgets/__pycache__/
-/.vscode
+util/__pycache__/
+tests/__pycache__/
+personal_testing

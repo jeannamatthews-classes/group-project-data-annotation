@@ -1,3 +1,6 @@
+import os
+os.environ["QT_LOGGING_RULES"] = "qt.multimedia.*=false"
+
 import sys
 from PySide6.QtWidgets import QApplication
 from main_window import MainWindow
