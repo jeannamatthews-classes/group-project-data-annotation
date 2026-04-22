@@ -25,7 +25,8 @@
 1) [Annotation](#e1-annotation)
 2) [User Interface](#e2-ui)
 3) [Alignment](#e3-alignment)
-
+## F. Future Work
+1) [Extensions](#f1-extensions)
 ---
 
 # A. Introduction
@@ -180,6 +181,9 @@ The figures below show our target user interface and a QT layout to achieve it. 
 ## E3. Alignment 
 Each sensor and the camera is in its own time system. To sync the modalities each data collection session is started by taking the two sensors one in each hand and smacking them together 3 times in front of the camera. The annotator will be able to use these peaks to align the sensors to one another and then to the video. The program will have (+/-)
 buttons that allow the user to change the t0 of the wave forms and a set trim button to change the displayed beginning of the video.
+
+# F. Future Work
+## F1. Extensions
 
 ---
 
