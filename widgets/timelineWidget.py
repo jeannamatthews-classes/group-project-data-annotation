@@ -183,5 +183,4 @@ class TimelineWidget(QWidget):
         self.time_keeper.positionChanged.connect(self._on_position_changed)
 
     def _on_position_changed(self, position):
-        position += self.time_keeper.get_trim()
         self.graph.update_position(position)
