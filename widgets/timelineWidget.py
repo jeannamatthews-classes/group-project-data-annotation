@@ -20,6 +20,9 @@ class TimelineWidget(QWidget):
         self._create_layout()
         self._connect_timekeeper()
 
+    def _parse_sensor_id(self, senor_id: str):
+        return senor_id.split('_', 1)[1].rsplit('_', 1)[0]
+
     def load_data(self, data_path: str):
         old_graph = self.graph
         self.layout().removeWidget(old_graph)
@@ -36,6 +39,9 @@ class TimelineWidget(QWidget):
         self.graph.update_position(pos)
 
         self.layout().addWidget(self.graph)
+
+        self.label_a.setText(self._parse_sensor_id(self.graph.sensor_a))
+        self.label_b.setText(self._parse_sensor_id(self.graph.sensor_b))
 
     def _create_layout(self):
         layout = QHBoxLayout()
