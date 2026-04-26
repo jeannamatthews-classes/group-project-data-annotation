@@ -34,6 +34,8 @@ PySide6_Addons==6.7.2
 PySide6_Essentials==6.7.2
 python-dateutil==2.9.0.post0
 pyzmq==27.1.0
+QtAwesome==1.4.2
+QtPy==2.4.3
 shiboken6==6.7.2
 six==1.17.0
 stack-data==0.6.3
@@ -41,4 +43,3 @@ tornado==6.5.5
 traitlets==5.14.3
 typing_extensions==4.15.0
 wcwidth==0.6.0
-QtAwesome==1.4.2
