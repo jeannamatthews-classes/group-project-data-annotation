@@ -1,8 +1,6 @@
 # Documentation
 
-The requirements that this project was based on can be found in the `documentation` branch under `docs\requirements.md`
-
-After the project has been completed we will merge this branch into main.
+The requirements that this project was based on can be found in within `docs\requirements.md`
 
 # Setup
 
