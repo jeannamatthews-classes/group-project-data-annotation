@@ -52,8 +52,8 @@ class MainWindow(QMainWindow):
 
         # LEFT vertical layout (Video + Timeline)
         left_layout = QVBoxLayout()
-        left_layout.addWidget(self.video_pane, stretch=2)
-        left_layout.addWidget(self.timeline, stretch=1)
+        left_layout.addWidget(self.video_pane, stretch=5)
+        left_layout.addWidget(self.timeline, stretch=2)
 
         # Add layouts to main layout
         main_layout.addLayout(left_layout, stretch=4)

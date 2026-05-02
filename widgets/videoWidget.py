@@ -22,26 +22,30 @@ class VideoWidget(QWidget):
 
     def _create_ui(self):
         layout = QVBoxLayout(self)
+
+        video_layout = QVBoxLayout()
+        video_layout.setSpacing(0)
+
         self.video_widget = QVideoWidget()
-        layout.addWidget(self.video_widget, stretch=1)
+        video_layout.addWidget(self.video_widget, stretch=1)
         self.player = QMediaPlayer()
         self.time_keeper.set_player(self.player)
         self.player.setVideoOutput(self.video_widget)
 
         self.comment_strip = CommentMarkerStrip()
-        layout.addWidget(self.comment_strip)
+        video_layout.addWidget(self.comment_strip)
 
         scrubber_layout = QHBoxLayout()
         self.scrubber = HighlightSlider(Qt.Orientation.Horizontal, self.span_keeper)
         self.scrubber.setRange(0, 0)
         scrubber_layout.addWidget(self.scrubber)
-        layout.addLayout(scrubber_layout)
+        video_layout.addLayout(scrubber_layout)
 
-        time_label_layout = QHBoxLayout()
         self.time_label = QLabel("hr:min:sec:frm / 00:00:00:00")
         self.time_label.setAlignment(Qt.AlignCenter)
-        time_label_layout.addWidget(self.time_label)
-        layout.addLayout(time_label_layout)
+        video_layout.addWidget(self.time_label)
+
+        layout.addLayout(video_layout)
 
         # --- Video Navigation ---
         nav_layout = QHBoxLayout()
