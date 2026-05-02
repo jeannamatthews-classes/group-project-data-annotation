@@ -1,5 +1,4 @@
+.venv/
+venv/
 __pycache__/
-widgets/__pycache__/
-util/__pycache__/
-tests/__pycache__/
 personal_testing
