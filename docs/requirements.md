@@ -26,7 +26,8 @@
 2) [User Interface](#e2-ui)
 3) [Alignment](#e3-alignment)
 ## F. Future Work
-1) [Extensions](#f1-extensions)
+1) [Generalized Annotations](#f1-generalized-annotations)
+2) [Improvements in Graph Modularity](#f2-improvements-in-graph-modularity)
 ---
 
 # A. Introduction
@@ -181,9 +182,15 @@ The figures below show our target user interface and a QT layout to achieve it. 
 ## E3. Alignment 
 Each sensor and the camera is in its own time system. To sync the modalities each data collection session is started by taking the two sensors one in each hand and smacking them together 3 times in front of the camera. The annotator will be able to use these peaks to align the sensors to one another and then to the video. The program will have (+/-)
 buttons that allow the user to change the t0 of the wave forms and a set trim button to change the displayed beginning of the video.
-
 # F. Future Work
-## F1. Extensions
+The core functionality of annotating synced video and time series data is widely applicable and has many potential use cases. Potential use cases could include:
+* Medical Applications - Similar to our intended user, where patient actions are associated with various sensors.
+* Action Video - Many action cameras include sensors used for stabilization and telemetry. Importing video and sensor data into this software the user could observe information like speed at any point in the video. Potentially using that information training athletes in all sorts of disciplines. 
+* Any application that uses sensors combined with video could potentially benefit from being able to view both simultaneously and apply comments. 
+## F1. Generalized Annotations
+The current comment fields are specific to our user’s case but can easily be generalized to apply to all sorts of users. It's even possible to create a config file to define all the fields so that it's easier for a less technical user to set up fields specific to their application without directly modifying the code.
+## F2. Improvements in Graph Modularity
+Similar to the annotation field, the graph functionality is specific to our user's `HDF5` files. Generalizing this feature would be required to make the application more generally useable. Additionally, having modularity within the graphing feature to support multiple graphs, multiple traces on each graph, and displaying correct units would increase the useability of the application outside of our user's specific use case.
 
 ---
 
